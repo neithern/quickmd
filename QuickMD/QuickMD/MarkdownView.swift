@@ -518,8 +518,7 @@ struct MarkdownView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .background(.regularMaterial)
-        .clipShape(Capsule())
+        .glassEffect(.regular, in: Capsule())
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 

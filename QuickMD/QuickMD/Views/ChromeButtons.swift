@@ -260,7 +260,7 @@ struct ChromePillLabel<Icon: View>: View {
         }
         .padding(.horizontal, expanded ? 10 : 6)
         .padding(.vertical, 4)
-        .background(theme.codeBackgroundColor.opacity(expanded ? 0.9 : 0.6))
+        .glassEffect(.regular, in: Capsule())
         .clipShape(Capsule())
         .contentShape(Capsule())
         .foregroundColor(tint)
