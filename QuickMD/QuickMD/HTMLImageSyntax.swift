@@ -59,8 +59,19 @@ enum HTMLImageSyntax {
     /// Opening forms may carry attributes (`<p align="center">`, `<a href=…>`,
     /// `<source srcset=…>`). `<a href>` is ignored for now: clicking the image
     /// keeps opening the preview.
-    private static let openingWrappers: Set<String> = ["p", "div", "center", "a", "picture", "source", "br"]
-    private static let closingWrappers: Set<String> = ["p", "div", "center", "a", "picture"]
+    ///
+    /// Table structure is included because READMEs put screenshot grids in
+    /// `<td>` cells (`<tr><td><img src="…"></td><td><img …></td></tr>`): the
+    /// wrapper-only lines disappear and each cell's `<img>` becomes an image
+    /// block — vertically, not as a grid (that would need a table renderer).
+    private static let openingWrappers: Set<String> = [
+        "p", "div", "center", "a", "picture", "source", "br",
+        "table", "thead", "tbody", "tfoot", "tr", "td", "th",
+    ]
+    private static let closingWrappers: Set<String> = [
+        "p", "div", "center", "a", "picture",
+        "table", "thead", "tbody", "tfoot", "tr", "td", "th",
+    ]
 
     /// Classifies a line (or several joined with `\n`), see `LineScan`. Nil
     /// when the text is anything else — including an empty or blank line.
