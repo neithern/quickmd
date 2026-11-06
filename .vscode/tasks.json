@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "QuickMD: Build Debug (CLT)",
+      "type": "process",
+      "command": "${workspaceFolder}/scripts/clt-build.sh",
+      "args": ["build", "Debug"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "QuickMD: Build Release (CLT)",
+      "type": "process",
+      "command": "${workspaceFolder}/scripts/clt-build.sh",
+      "args": ["release"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "QuickMD: Clean (CLT)",
+      "type": "process",
+      "command": "${workspaceFolder}/scripts/clt-build.sh",
+      "args": ["clean"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}
