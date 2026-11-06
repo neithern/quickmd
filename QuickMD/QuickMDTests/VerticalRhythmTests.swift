@@ -676,7 +676,7 @@ final class VerticalRhythmTests: XCTestCase {
                        ["q1:line one\nline two\nline three", "t:After"])
         XCTAssertEqual(try quoteShape("> a\n===\n"), ["q1:a\n==="])
         XCTAssertEqual(try quoteShape("> a\n    b\n"), ["q1:a\n    b"])
-        XCTAssertEqual(try quoteShape("> a\n<span>x</span>\n").first, "q1:a\n<span>x</span>")
+        XCTAssertEqual(try quoteShape("> a\n<span>x</span>\n").first, "q1:a\nx")
         XCTAssertEqual(try quoteShape("> a\nb\n> c\n"), ["q1:a\nb\nc"])
         // In a list item, a nested quote, an alert; and with fewer markers.
         XCTAssertEqual(try quoteShape("> - a\nb\n"), ["q1:- a\nb"])

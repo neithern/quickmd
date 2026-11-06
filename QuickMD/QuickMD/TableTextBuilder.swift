@@ -447,7 +447,7 @@ enum TableTextBuilder {
     /// the very face the screen draws.
     static func printableCell(_ markdown: String, isHeader: Bool,
                               renderer: MarkdownRenderer) -> AttributedString {
-        let cell = renderer.renderInline(markdown)
+        let cell = renderer.renderInlineForTableCell(markdown)
         guard isHeader else { return cell }
         // Rebuilt run by run from the UNCHANGED `cell`, so every range is used
         // only on the string it came from (AttributedString indices are not

@@ -413,3 +413,580 @@ enum HTMLImageSyntax {
         }
     }
 }
+
+// MARK: - Common HTML tag tokenizer
+
+/// A minimal HTML tag tokenizer shared by the inline renderer and the HTML
+/// table scanner. It only understands the shape those two need — `<name
+/// attr=value …>`, `</name>`, `<name/>`, quoted/unquoted values — and never
+/// interprets what a tag means. Anything malformed returns nil, so callers keep
+/// the text literally (HTML stays a conservative subset).
+///
+/// Foundation-only and allocation-light: tag/attribute names are ASCII, values
+/// are materialised only for attributes (`href`, `align`, `style`).
+enum HTMLTagSyntax {
+
+    struct Tag {
+        /// Lowercased tag name.
+        let name: String
+        let isClosing: Bool
+        let isSelfClosing: Bool
+        /// Attribute names lowercased; values entity-decoded, quotes removed.
+        /// The first occurrence of an attribute wins, as in HTML.
+        let attributes: [String: String]
+        /// Index just past the closing `>`.
+        let end: String.Index
+    }
+
+    /// Parses a tag at the start of `text` (which must start with `<`). Nil for
+    /// anything that is not a complete, syntactically valid tag — comments
+    /// included; use `commentEnd(atStartOf:)` for those.
+    static func tag(atStartOf text: Substring) -> Tag? {
+        guard text.first == "<" else { return nil }
+        let end = text.endIndex
+        var i = text.index(after: text.startIndex)
+        guard i < end else { return nil }
+
+        var isClosing = false
+        if text[i] == "/" {
+            isClosing = true
+            i = text.index(after: i)
+        }
+        guard i < end, isASCIILetter(text[i]) else { return nil }
+        let nameStart = i
+        while i < end, isTagNameCharacter(text[i]) { i = text.index(after: i) }
+        let name = String(text[nameStart..<i]).lowercased()
+
+        if isClosing {
+            while i < end, text[i].isWhitespace { i = text.index(after: i) }
+            guard i < end, text[i] == ">" else { return nil }
+            return Tag(name: name, isClosing: true, isSelfClosing: false,
+                       attributes: [:], end: text.index(after: i))
+        }
+
+        var attributes: [String: String] = [:]
+        var selfClosing = false
+        while true {
+            while i < end, text[i].isWhitespace { i = text.index(after: i) }
+            guard i < end else { return nil }
+            if text[i] == ">" {
+                i = text.index(after: i)
+                break
+            }
+            if text[i] == "/" {
+                let afterSlash = text.index(after: i)
+                guard afterSlash < end, text[afterSlash] == ">" else { return nil }
+                selfClosing = true
+                i = text.index(after: afterSlash)
+                break
+            }
+            guard isAttributeNameStart(text[i]) else { return nil }
+            let attrStart = i
+            while i < end, isAttributeNameCharacter(text[i]) { i = text.index(after: i) }
+            let attrName = String(text[attrStart..<i]).lowercased()
+
+            var probe = i
+            while probe < end, text[probe].isWhitespace { probe = text.index(after: probe) }
+            var value = ""
+            if probe < end, text[probe] == "=" {
+                i = text.index(after: probe)
+                while i < end, text[i].isWhitespace { i = text.index(after: i) }
+                guard i < end else { return nil }
+                if text[i] == "\"" || text[i] == "'" {
+                    let quote = text[i]
+                    i = text.index(after: i)
+                    let valueStart = i
+                    while i < end, text[i] != quote { i = text.index(after: i) }
+                    guard i < end else { return nil }
+                    value = String(text[valueStart..<i])
+                    i = text.index(after: i)
+                } else {
+                    let valueStart = i
+                    while i < end, !text[i].isWhitespace, text[i] != ">" {
+                        i = text.index(after: i)
+                    }
+                    guard i > valueStart else { return nil }
+                    value = String(text[valueStart..<i])
+                }
+            }
+            if attributes[attrName] == nil {
+                attributes[attrName] = HTMLEntities.decode(value)
+            }
+        }
+        return Tag(name: name, isClosing: false, isSelfClosing: selfClosing,
+                   attributes: attributes, end: i)
+    }
+
+    /// The index just past a comment at `text`'s start (`<!-- … -->`), or nil.
+    static func commentEnd(atStartOf text: Substring) -> String.Index? {
+        guard text.hasPrefix("<!--") else { return nil }
+        guard let range = text.range(of: "-->") else { return nil }
+        return range.upperBound
+    }
+
+    /// The contents of the first close tag named `name`, with nested tags of
+    /// the same name counted (so `<a><a>x</a></a>` closes the outer one at the
+    /// second `</a>`). `start` is just past the opening tag.
+    static func matchingClose(named name: String, in text: Substring, from start: String.Index)
+        -> (inner: Range<String.Index>, end: String.Index)? {
+        var i = start
+        var depth = 0
+        while i < text.endIndex {
+            guard let lt = text[i...].firstIndex(of: "<") else { return nil }
+            if let commentEnd = commentEnd(atStartOf: text[lt...]) {
+                i = commentEnd
+                continue
+            }
+            guard let tag = tag(atStartOf: text[lt...]) else {
+                i = text.index(after: lt)
+                continue
+            }
+            if tag.name == name {
+                if tag.isClosing {
+                    if depth == 0 { return (start..<lt, tag.end) }
+                    depth -= 1
+                } else if !tag.isSelfClosing {
+                    depth += 1
+                }
+            }
+            i = tag.end
+        }
+        return nil
+    }
+
+    private static func isASCIILetter(_ character: Character) -> Bool {
+        isASCIIScalar(character) && character.isLetter
+    }
+
+    private static func isTagNameCharacter(_ character: Character) -> Bool {
+        isASCIIScalar(character) && (character.isLetter || character.isNumber || character == "-")
+    }
+
+    private static func isAttributeNameStart(_ character: Character) -> Bool {
+        isASCIIScalar(character) && (character.isLetter || character == "_" || character == ":")
+    }
+
+    private static func isAttributeNameCharacter(_ character: Character) -> Bool {
+        isASCIIScalar(character) && (character.isLetter || character.isNumber
+            || character == "_" || character == "." || character == ":" || character == "-")
+    }
+
+    private static func isASCIIScalar(_ character: Character) -> Bool {
+        character.unicodeScalars.allSatisfy { $0.isASCII }
+    }
+}
+
+// MARK: - Block text tags
+
+/// Unwraps one line of a block-level, text-bearing HTML tag into the text it
+/// shows (plus the heading level for `<h1>`–`<h6>`). The parser uses it for
+/// `<p>`, `<div>`, `<caption>`, `<summary>`, `<h1>…</h1>` and similar tags whose
+/// content is plain text: block wrappers are dropped, inline tags the renderer
+/// understands (`<a>`, `<strong>`, `<em>`, `<code>`, …) stay verbatim, and
+/// unknown tags make the whole line fall back to literal text.
+///
+/// `caption` is also captured by `HTMLTableSyntax` when it is inside a table;
+/// this type covers a standalone `<caption>` and every other text block.
+enum HTMLBlockText {
+
+    struct Line: Equatable {
+        /// The visible text, still containing the kept inline tags.
+        let text: String
+        /// 1…6 when the line contains an opening `<h1>`…`<h6>`.
+        let headingLevel: Int?
+    }
+
+    /// Block containers whose content is read as text. Their tags are dropped;
+    /// the text around them is kept.
+    private static let blockTags: Set<String> = [
+        "p", "div", "center", "caption", "summary", "figcaption",
+        "section", "article", "header", "footer", "main", "aside",
+        "figure", "details", "li", "dt", "dd", "blockquote",
+        "ul", "ol", "dl", "address", "legend", "nav",
+        "html", "body", "head", "title", "td", "th", "tr",
+    ]
+
+    /// Inline tags the renderer styles itself; kept as written for `renderInline`.
+    private static let keptInlineTags: Set<String> = [
+        "a", "strong", "b", "em", "i", "code", "del", "s", "strike", "br",
+    ]
+
+    /// Inline wrappers with no style of their own: drop the tags, keep the text.
+    private static let droppedInlineTags: Set<String> = [
+        "span", "small", "mark", "u", "sub", "sup", "font",
+    ]
+
+    /// Tags whose wrappers are transparent in inline content too (table cells,
+    /// link text, headings): the block containers above, the heading tags and
+    /// the style-less inline wrappers. Kept tags (`<a>`, `<em>`, …) are not here.
+    static let transparentInlineTags: Set<String> =
+        blockTags
+            .union(Set(["h1", "h2", "h3", "h4", "h5", "h6"]))
+            .union(droppedInlineTags)
+
+    /// Unwraps `line`; nil when the line carries no block tag (so the normal
+    /// inline path handles it) or contains an unsupported tag.
+    static func unwrap(_ line: String) -> Line? {
+        var index = line.startIndex
+        var indent = 0
+        while index < line.endIndex, line[index] == " ", indent < 4 {
+            indent += 1
+            index = line.index(after: index)
+        }
+        guard indent <= 3, index < line.endIndex, line[index] == "<" else { return nil }
+
+        var text = ""
+        var heading: Int?
+        var sawBlock = false
+        var i = index
+        let end = line.endIndex
+
+        func appendText(_ chunk: Substring) {
+            text.append(contentsOf: chunk)
+        }
+        func appendSeparator() {
+            guard !text.isEmpty, text.last?.isWhitespace != true else { return }
+            text.append(" ")
+        }
+
+        while i < end {
+            if line[i] != "<" {
+                let next = line[i...].firstIndex(of: "<") ?? end
+                appendText(line[i..<next])
+                i = next
+                continue
+            }
+            if let commentEnd = HTMLTagSyntax.commentEnd(atStartOf: line[i...]) {
+                i = commentEnd
+                continue
+            }
+            let tagStart = i
+            guard let tag = HTMLTagSyntax.tag(atStartOf: line[i...]) else {
+                appendText("<"[...])
+                i = line.index(after: i)
+                continue
+            }
+            let name = tag.name
+            i = tag.end
+
+            if let level = headingLevel(of: name) {
+                sawBlock = true
+                if !tag.isClosing { heading = level }
+                continue
+            }
+            if blockTags.contains(name) {
+                sawBlock = true
+                // Between block elements, e.g. `<p>a</p><p>b</p>`.
+                appendSeparator()
+                continue
+            }
+            if droppedInlineTags.contains(name) {
+                continue
+            }
+            if keptInlineTags.contains(name) {
+                appendText(line[tagStart..<tag.end])
+                continue
+            }
+            return nil   // unsupported tag: leave the line literal
+        }
+
+        guard sawBlock else { return nil }
+        return Line(text: text.trimmingCharacters(in: .whitespacesAndNewlines),
+                    headingLevel: heading)
+    }
+
+    /// The range of a `</hN>` tag in `line`, for the parser's multi-line
+    /// heading form:
+    ///
+    ///     <h1 align="center">
+    ///     Title
+    ///     </h1>
+    static func closingHeadingRange(in line: String, level: Int) -> Range<String.Index>? {
+        let name = "h\(level)"
+        var i = line.startIndex
+        while i < line.endIndex {
+            guard let lt = line[i...].firstIndex(of: "<") else { return nil }
+            guard let tag = HTMLTagSyntax.tag(atStartOf: line[lt...]) else {
+                i = line.index(after: lt)
+                continue
+            }
+            if tag.name == name && tag.isClosing { return lt..<tag.end }
+            i = tag.end
+        }
+        return nil
+    }
+
+    private static func headingLevel(of name: String) -> Int? {
+        guard name.count == 2, name.first == "h",
+              let level = name.last?.wholeNumberValue, (1...6).contains(level) else { return nil }
+        return level
+    }
+}
+
+// MARK: - HTML tables
+
+/// Scans a narrow, GitHub-README-shaped subset of HTML tables into the same
+/// grid a pipe table produces. Foundation-only and off-main safe: the parser
+/// turns the result into a normal `.table` block, so measurement, selection,
+/// search and PDF need no new code.
+///
+/// Supported: `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td`,
+/// `caption` (emitted as the text block just above the table),
+/// `col`/`colgroup` (ignored), `align` and `style="text-align:…"`.
+/// Cell content keeps inline Markdown and the inline HTML tags the renderer
+/// understands; block wrappers (`p`, `div`, `center`, `span`) are transparent
+/// and `br` is a space (a table cell is one paragraph).
+///
+/// Deliberately unsupported — the whole table then stays the existing
+/// line-based text/image handling: nested tables, `<img>` in a cell, `script`,
+/// `style`, and `colspan`/`rowspan` (parsed as ordinary cells, no merging).
+/// HTML outside this subset is never executed or loaded.
+enum HTMLTableSyntax {
+
+    enum Alignment: Equatable {
+        case leading, center, trailing
+    }
+
+    struct Table: Equatable {
+        let headers: [String]
+        let rows: [[String]]
+        let alignments: [Alignment]
+        /// `<caption>` text, when the table has one (nil otherwise).
+        let caption: String?
+        /// Index of the first line after `</table>`.
+        let endIndex: Int
+    }
+
+    private struct Cell {
+        var text = ""
+        var alignment: Alignment?
+    }
+
+    private struct Row {
+        var cells: [Cell] = []
+        var isHeader = false
+    }
+
+    /// Scans a table starting on `lines[start]`. Nil when this is not a table,
+    /// the table is incomplete, or it uses an unsupported construct.
+    static func scan(_ lines: [String], from start: Int) -> Table? {
+        guard start < lines.count, isTableStart(lines[start]) else { return nil }
+
+        var depth = 0
+        var rows: [Row] = []
+        var row: Row?
+        var cell: Cell?
+        var inThead = false
+        var inCaption = false
+        var inComment = false
+        var caption = ""
+        var endIndex: Int?
+
+        func closeCell() {
+            guard let current = cell else { return }
+            if row == nil { row = Row(isHeader: inThead) }
+            row?.cells.append(current)
+            cell = nil
+        }
+        func closeRow() {
+            closeCell()
+            guard let current = row else { return }
+            if !current.cells.isEmpty { rows.append(current) }
+            row = nil
+        }
+        func appendText(_ text: Substring) {
+            if inCaption {
+                caption.append(contentsOf: text)
+            } else if cell != nil {
+                cell?.text.append(contentsOf: text)
+            }
+        }
+        func appendSpace() {
+            if inCaption {
+                if !caption.isEmpty, caption.last?.isWhitespace != true { caption.append(" ") }
+                return
+            }
+            guard var current = cell else { return }
+            if !current.text.isEmpty, current.text.last?.isWhitespace != true {
+                current.text.append(" ")
+            }
+            cell = current
+        }
+
+        lineLoop: for lineIndex in start..<lines.count {
+            let line = lines[lineIndex]
+            var cursor = line.startIndex
+            while cursor < line.endIndex {
+                if inComment {
+                    if let range = line.range(of: "-->", range: cursor..<line.endIndex) {
+                        inComment = false
+                        cursor = range.upperBound
+                    } else {
+                        cursor = line.endIndex
+                    }
+                    continue
+                }
+
+                guard let lt = line[cursor...].firstIndex(of: "<") else {
+                    appendText(line[cursor...])
+                    cursor = line.endIndex
+                    break
+                }
+                appendText(line[cursor..<lt])
+                cursor = lt
+
+                if line[cursor...].hasPrefix("<!--") {
+                    if let end = HTMLTagSyntax.commentEnd(atStartOf: line[cursor...]) {
+                        cursor = end
+                    } else {
+                        inComment = true
+                        cursor = line.endIndex
+                    }
+                    continue
+                }
+
+                guard let tag = HTMLTagSyntax.tag(atStartOf: line[cursor...]) else {
+                    appendText("<"[...])
+                    cursor = line.index(after: cursor)
+                    continue
+                }
+                let tagEnd = tag.end
+                cursor = tagEnd
+
+                switch tag.name {
+                case "table":
+                    if tag.isClosing {
+                        depth -= 1
+                        if depth == 0 {
+                            endIndex = lineIndex + 1
+                            break lineLoop
+                        }
+                    } else {
+                        if depth > 0 { return nil }   // nested table
+                        depth = 1
+                    }
+                case "thead":
+                    inThead = !tag.isClosing
+                case "tbody", "tfoot":
+                    // An explicit body implicitly ends the header section, as in HTML.
+                    if !tag.isClosing { inThead = false }
+                case "tr":
+                    if tag.isClosing {
+                        closeRow()
+                    } else {
+                        closeRow()
+                        row = Row(isHeader: inThead)
+                    }
+                case "td", "th":
+                    if tag.isClosing {
+                        closeCell()
+                    } else {
+                        closeCell()
+                        if row == nil { row = Row(isHeader: inThead) }
+                        if tag.name == "th" { row?.isHeader = true }
+                        cell = Cell(alignment: alignment(from: tag.attributes))
+                    }
+                case "caption":
+                    inCaption = !tag.isClosing
+                case "img", "script", "style":
+                    return nil
+                case "col", "colgroup", "hr":
+                    break
+                case "br", "p", "div", "center":
+                    appendSpace()
+                case "span":
+                    // Inline wrapper: transparent, no boundary space.
+                    break
+                default:
+                    // Keep inline markup for `renderInline` (`<a>`, `<em>`, …).
+                    appendText(line[lt..<tagEnd])
+                }
+            }
+            appendSpace()   // a source line break is whitespace inside a cell
+        }
+
+        guard let tableEnd = endIndex else { return nil }
+        closeRow()
+        guard !rows.isEmpty else { return nil }
+
+        var body = rows
+        let headerRow = body.firstIndex(where: { $0.isHeader }).map { body[$0] }
+        if let headerIndex = body.firstIndex(where: { $0.isHeader }) {
+            body.remove(at: headerIndex)
+        }
+        let columnCount = max(headerRow?.cells.count ?? 0, body.map { $0.cells.count }.max() ?? 0)
+        guard columnCount > 0 else { return nil }
+
+        let headers = padded(headerRow?.cells.map(clean) ?? [], to: columnCount)
+        let data = body.map { padded($0.cells.map(clean), to: columnCount) }
+
+        let alignmentRows = ([headerRow].compactMap { $0 } + body)
+        let alignments = (0..<columnCount).map { column -> Alignment in
+            for candidate in alignmentRows where column < candidate.cells.count {
+                if let alignment = candidate.cells[column].alignment { return alignment }
+            }
+            return .leading
+        }
+
+        let captionText = caption.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Table(headers: headers, rows: data, alignments: alignments,
+                     caption: captionText.isEmpty ? nil : captionText, endIndex: tableEnd)
+    }
+
+    /// A table has to start at the beginning of its line (up to three leading
+    /// spaces, like the other block constructs) with an opening `<table>` tag.
+    /// The name is checked before the full tag parse: the parser calls this for
+    /// EVERY line, and a multi-megabyte line starting with another tag must not
+    /// be scanned twice.
+    private static func isTableStart(_ line: String) -> Bool {
+        var index = line.startIndex
+        var indent = 0
+        while index < line.endIndex, line[index] == " ", indent < 4 {
+            indent += 1
+            index = line.index(after: index)
+        }
+        guard indent <= 3, index < line.endIndex else { return false }
+        let rest = line[index...]
+        guard rest.prefix(6).lowercased() == "<table" else { return false }
+        let afterName = rest.index(rest.startIndex, offsetBy: 6, limitedBy: rest.endIndex) ?? rest.endIndex
+        if afterName < rest.endIndex {
+            let next = rest[afterName]
+            guard next == " " || next == "\t" || next == ">" || next == "/" else { return false }
+        }
+        guard let tag = HTMLTagSyntax.tag(atStartOf: rest) else { return false }
+        return !tag.isClosing && !tag.isSelfClosing
+    }
+
+    private static func clean(_ cell: Cell) -> String {
+        cell.text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func padded(_ cells: [String], to count: Int) -> [String] {
+        Array(cells.prefix(count)) + Array(repeating: "", count: max(0, count - cells.count))
+    }
+
+    private static func alignment(from attributes: [String: String]) -> Alignment? {
+        if let align = attributes["align"]?.trimmingCharacters(in: .whitespaces).lowercased() {
+            switch align {
+            case "center": return .center
+            case "right", "end": return .trailing
+            case "left", "start": return .leading
+            default: break
+            }
+        }
+        guard let style = attributes["style"]?.lowercased(),
+              let keyword = style.range(of: "text-align") else { return nil }
+        var value = style[keyword.upperBound...]
+        value = value.drop(while: { $0 == " " || $0 == "\t" })
+        guard value.first == ":" else { return nil }
+        value = value.dropFirst()
+        value = value.drop(while: { $0 == " " || $0 == "\t" })
+        let name = value.prefix(while: { $0.isLetter })
+        switch name.lowercased() {
+        case "center": return .center
+        case "right", "end": return .trailing
+        case "left", "start": return .leading
+        default: return nil
+        }
+    }
+}

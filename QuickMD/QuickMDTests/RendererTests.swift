@@ -987,7 +987,7 @@ final class RendererTests: XCTestCase {
     /// zoom, and text with syntax must take the parsed path.
     func testPlainLinkTextFastPathEqualsTheParsedPath() {
         let plain = ["Install", "Read the guide", "Zażółć gęślą", "a & b", "AT&amp;T &copy;", "50% off $5",
-                     "x < y > z", "e-mail: a@b.c", "1. not a list", "# not a heading", "", "  spaced  ", "emoji 🚀"]
+                     "e-mail: a@b.c", "1. not a list", "# not a heading", "", "  spaced  ", "emoji 🚀"]
         for scale in [1.0, 1.5] as [CGFloat] {
             let renderer = MarkdownRenderer(theme: MarkdownTheme.cached(for: .dark), fontScale: scale)
             for text in plain {
@@ -1004,7 +1004,8 @@ final class RendererTests: XCTestCase {
                 }(), text)
             }
         }
-        for text in ["**b**", "`c`", "a_b", "~~s~~", "![i](p)", "[^1]", "a \\* b", "see https://x.y", "http://a"] {
+        for text in ["**b**", "`c`", "a_b", "~~s~~", "![i](p)", "[^1]", "a \\* b", "see https://x.y", "http://a",
+                     "x < y > z", "<b>x</b>"] {
             XCTAssertTrue(MarkdownRenderer.linkTextNeedsParsing(text), text)
         }
     }
@@ -1110,6 +1111,37 @@ final class RendererTests: XCTestCase {
         XCTAssertEqual(String(renderer.renderQuotedBody("Pay \\$5").characters), "Pay $5")
         // The segmenter itself: offsets of escaped dollars never delimit.
         XCTAssertEqual(InlineMathSegmenter.split("a $5 and $6", escaped: [2, 9]), [.text("a $5 and $6")])
+    }
+
+    // MARK: - Inline HTML
+
+    func testHTMLInlineLink() {
+        let attr = renderer.renderInline(#"see <a href="https://example.com">docs</a> now"#)
+        XCTAssertEqual(String(attr.characters), "see docs now")
+        XCTAssertEqual(attr.runs.compactMap(\.link).first?.absoluteString, "https://example.com")
+    }
+
+    func testHTMLInlineEmphasisCodeAndBreak() {
+        XCTAssertEqual(rendered("<strong>bold</strong> and <em>italic</em>"), "bold and italic")
+        XCTAssertEqual(rendered("<del>gone</del>"), "gone")
+        XCTAssertEqual(rendered("<code>a&lt;b</code>"), "a<b")
+        XCTAssertEqual(rendered("a<br>b"), "a\nb")
+        XCTAssertEqual(rendered("<span>x</span> <u>y</u>"), "x y")
+    }
+
+    func testUnknownHTMLStaysLiteral() {
+        XCTAssertEqual(rendered("<custom>x</custom>"), "<custom>x</custom>")
+        XCTAssertEqual(rendered("a < b"), "a < b")
+    }
+
+    func testBlockTagsAreTransparentInInlineContent() {
+        XCTAssertEqual(rendered("<div>x</div>"), "x")
+        XCTAssertEqual(rendered("<span><p>y</p></span>"), "y")
+        XCTAssertEqual(rendered("text</p>"), "text")
+    }
+
+    func testHTMLCommentIsInvisible() {
+        XCTAssertEqual(rendered("a<!-- hidden -->b"), "ab")
     }
 
 }

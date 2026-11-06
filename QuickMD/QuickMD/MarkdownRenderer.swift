@@ -155,6 +155,10 @@ struct MarkdownRenderer: Sendable {
     /// (`renderInline(_:literalBackslashes:literalEntities:)`): GitHub shows
     /// front matter as plain text, references included.
     private var entitiesLiteral = false
+    /// True while rendering a table cell. A cell is exactly one paragraph
+    /// (`TableTextBuilder`'s layout invariant), so an HTML `<br>` becomes a
+    /// space there instead of a hard line break.
+    private var breaksAsSpaces = false
 
     /// `text` with its character references decoded, unless `entitiesLiteral`.
     private func decodedText(_ text: String) -> String {
@@ -856,6 +860,15 @@ struct MarkdownRenderer: Sendable {
         return literal.renderInlineFormatting(text)
     }
 
+    /// `renderInline` for one table cell: a `<br>` is a space, because a cell
+    /// is one paragraph (`TableTextBuilder`'s layout invariant). Used by the
+    /// printable table (the screen cell already normalises newlines).
+    func renderInlineForTableCell(_ text: String) -> AttributedString {
+        var cell = self
+        cell.breaksAsSpaces = true
+        return cell.renderInlineFormatting(text)
+    }
+
     private func renderInlineFormatting(_ text: String) -> AttributedString {
         var result = AttributedString()
         // Native contiguous UTF-8 storage up front (a no-op unless the line is
@@ -893,6 +906,7 @@ struct MarkdownRenderer: Sendable {
             if parsed == nil { parsed = tryParseStrikethrough(&remaining) }
             if parsed == nil { parsed = tryParseImage(&remaining, pairs: pairs) }
             if parsed == nil { parsed = tryParseLink(&remaining, pairs: pairs) }
+            if parsed == nil { parsed = tryParseHTMLInline(&remaining) }
             if parsed == nil { parsed = tryParseAutolink(&remaining) }
 
             if let (attr, newRemaining) = parsed {
@@ -1025,6 +1039,83 @@ struct MarkdownRenderer: Sendable {
         return (attr, afterMarker[afterMarker.index(after: endIndex)...])
     }
 
+    /// Inline HTML from the conservative allowlist: links, emphasis, code,
+    /// strikethrough and `<br>`. Unknown or malformed tags return nil, so `<`
+    /// keeps its existing plain-text behaviour; nothing here executes markup,
+    /// loads resources or leaves the attribution pipeline.
+    private func tryParseHTMLInline(_ remaining: inout Substring) -> (AttributedString, Substring)? {
+        guard remaining.first == "<", !entitiesLiteral else { return nil }
+
+        if let commentEnd = HTMLTagSyntax.commentEnd(atStartOf: remaining) {
+            return (AttributedString(), remaining[commentEnd...])
+        }
+        guard let tag = HTMLTagSyntax.tag(atStartOf: remaining) else { return nil }
+        if tag.isClosing {
+            // A stray close tag of a transparent wrapper (`</p>` after a
+            // multi-line `<p>…`) is layout, not text; styled closers stay
+            // literal when no opening tag consumed them.
+            guard HTMLBlockText.transparentInlineTags.contains(tag.name) else { return nil }
+            return (AttributedString(), remaining[tag.end...])
+        }
+        let afterOpen = tag.end
+        if tag.name == "br" {
+            var attr = AttributedString(breaksAsSpaces ? " " : "\n")
+            attr.setDualFont(size: scaled(16), fonts: theme.fonts)
+            attr.setDualForeground(theme.textColor)
+            return (attr, remaining[afterOpen...])
+        }
+
+        // Block containers and style-less inline wrappers are transparent:
+        // their content renders normally, without the tags.
+        if HTMLBlockText.transparentInlineTags.contains(tag.name) {
+            guard let close = HTMLTagSyntax.matchingClose(named: tag.name, in: remaining, from: afterOpen)
+            else { return nil }
+            return (renderInlineFormatting(String(remaining[close.inner])), remaining[close.end...])
+        }
+
+        switch tag.name {
+        case "a", "strong", "b", "em", "i", "code", "del", "s", "strike":
+            break
+        default:
+            return nil
+        }
+        if tag.name == "a" && linksDisabled { return nil }
+
+        guard let close = HTMLTagSyntax.matchingClose(named: tag.name, in: remaining, from: afterOpen)
+        else { return nil }
+        let inner = String(remaining[close.inner])
+
+        switch tag.name {
+        case "a":
+            guard let href = tag.attributes["href"], !href.isEmpty else { return nil }
+            return makeLink(text: inner, url: href, remaining: remaining[close.end...])
+
+        case "strong", "b":
+            var attr = renderInlineFormatting(inner)
+            attr.setDualFont(size: scaled(16), bold: true, fonts: theme.fonts)
+            return (attr, remaining[close.end...])
+
+        case "em", "i":
+            var attr = renderInlineFormatting(inner)
+            attr.setDualFont(size: scaled(16), italic: true, fonts: theme.fonts)
+            return (attr, remaining[close.end...])
+
+        case "code":
+            // HTML code is literal: no Markdown inside, entities decoded as a
+            // browser would, line breaks become spaces like an inline code span.
+            var attr = AttributedString(decodedText(inner.replacingOccurrences(of: "\n", with: " ")))
+            attr.setDualFont(size: scaled(13), monospaced: true, fonts: theme.fonts)
+            attr.setDualForeground(theme.textColor)
+            attr.setDualBackground(theme.codeBackgroundColor)
+            return (attr, remaining[close.end...])
+
+        default:   // del, s, strike
+            var attr = renderInlineFormatting(inner)
+            attr.setDualStrikethrough()
+            return (attr, remaining[close.end...])
+        }
+    }
+
     private func tryParseStrikethrough(_ remaining: inout Substring) -> (AttributedString, Substring)? {
         guard remaining.hasPrefix("~~") else { return nil }
 
@@ -1121,14 +1212,15 @@ struct MarkdownRenderer: Sendable {
     /// Whether `renderInlineFormatting` could do anything but one plain run:
     /// a character some inline parser starts on — `\` escape, `` ` `` code,
     /// `*` / `_` emphasis, `~` strikethrough, `!` image, `[` footnote or
-    /// link, `h` an autolink (`http://`, `https://`). Character references
-    /// (`&`) are decoded on the plain run too; `$` is only looked at later
-    /// (inline math, on the rendered text), as on the parsed path.
+    /// link, `<` an HTML tag, `h` an autolink (`http://`, `https://`).
+    /// Character references (`&`) are decoded on the plain run too; `$` is only
+    /// looked at later (inline math, on the rendered text), as on the parsed
+    /// path.
     static func linkTextNeedsParsing(_ text: String) -> Bool {
         text.utf8.contains { byte in
             switch byte {
             case UInt8(ascii: "\\"), UInt8(ascii: "`"), UInt8(ascii: "*"), UInt8(ascii: "_"),
-                 UInt8(ascii: "~"), UInt8(ascii: "!"), UInt8(ascii: "["):
+                 UInt8(ascii: "~"), UInt8(ascii: "!"), UInt8(ascii: "["), UInt8(ascii: "<"):
                 return true
             default:
                 return false
