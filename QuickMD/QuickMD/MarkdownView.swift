@@ -394,23 +394,6 @@ struct MarkdownView: View {
                 }
                 .padding(.top, topChromeInset)
             }
-            .overlay(alignment: .bottomTrailing) {
-                // The Support / Tip Jar button is hidden while editing as well
-                // as in Reading Mode: it would float over the text being
-                // edited (bottom-right is where a long line ends), and a
-                // misclick there opens a menu or a window mid-edit.
-                if !isReadingMode && !editSession.isActive {
-                    Group {
-                        #if APPSTORE
-                        TipJarButton(theme: theme)
-                        #else
-                        SupportButton(theme: theme)
-                        #endif
-                    }
-                    .padding(16)
-                    .transition(.opacity)
-                }
-            }
             .overlay(alignment: .center) {
                 // The hidden list re-parses after every save; the editor is
                 // what is on screen, and it is not waiting for anything.
