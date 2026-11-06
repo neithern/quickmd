@@ -21,7 +21,7 @@ enum AlertKind: String, Sendable, CaseIterable {
         self.init(rawValue: name)
     }
 
-    var title: String { rawValue.capitalized }
+    var title: String { L(rawValue.capitalized) }
 
     var symbolName: String {
         switch self {

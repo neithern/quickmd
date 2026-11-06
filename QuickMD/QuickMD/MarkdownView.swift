@@ -405,7 +405,7 @@ struct MarkdownView: View {
                         // long enough to tell apart: the parser turning text into
                         // blocks, then the measurer turning blocks into row
                         // heights.
-                        Text(isParsing ? "Parsing…" : "Rendering…")
+                        Text(isParsing ? L("Parsing…") : L("Rendering…"))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -985,9 +985,9 @@ struct MarkdownView: View {
         startWatching(url)
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         switch reloadFromDisk() {
-        case .changed: showToast("Reloaded")
-        case .unchanged: showToast("Reloaded \u{00B7} no changes")
-        case .unreadable: showToast("Couldn't read the file")
+        case .changed: showToast(L("Reloaded"))
+        case .unchanged: showToast(L("Reloaded \u{00B7} no changes"))
+        case .unreadable: showToast(L("Couldn't read the file"))
         case .ownedBySession: break
         }
     }
@@ -1359,7 +1359,7 @@ struct MarkdownView: View {
     private func applyZoom(_ zoom: MarkdownZoom) {
         let next = zoom.applied(to: fontScale, defaultScale: defaultZoom)
         fontScale = next
-        showToast("Zoom \(Int((next * 100).rounded()))%")
+        showToast(L("Zoom %lld%%", Int((next * 100).rounded())))
     }
 
     // MARK: - Reading Mode
@@ -1387,7 +1387,7 @@ struct MarkdownView: View {
         isReadingMode = on
         // While editing the first Esc leaves the editor, not Reading Mode —
         // the hint would be wrong there.
-        if on { showToast(editSession.isActive ? "Reading Mode" : "Reading Mode (Esc to exit)") }
+        if on { showToast(editSession.isActive ? L("Reading Mode") : L("Reading Mode (Esc to exit)")) }
     }
 
     private func showToast(_ message: String) {
@@ -1551,14 +1551,14 @@ struct MarkdownView: View {
             // registered it. Documents are untrusted input — confirm before
             // handing control to another application.
             let alert = NSAlert()
-            alert.messageText = "Open \u{201C}\(scheme):\u{201D} link?"
+            alert.messageText = L("Open “%@:” link?", scheme)
             // Middle-truncated: a document can carry a multi-megabyte URL
             // (a `data:` link, #32) and an alert does not scroll.
-            alert.informativeText = "This link opens another application:\n"
-                + DisplayString.middleTruncated(url.absoluteString, maxLength: 200)
+            alert.informativeText = L("This link opens another application:\n%@",
+                                      DisplayString.middleTruncated(url.absoluteString, maxLength: 200))
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "Open")
-            alert.addButton(withTitle: "Cancel")
+            alert.addButton(withTitle: L("Open"))
+            alert.addButton(withTitle: L("Cancel"))
             if alert.runModal() == .alertFirstButtonReturn {
                 NSWorkspace.shared.open(url)
             }

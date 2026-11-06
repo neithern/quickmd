@@ -38,15 +38,16 @@ enum DocumentFileWriter {
         var errorDescription: String? {
             switch self {
             case .missing(let url):
-                return "“\(url.lastPathComponent)” no longer exists."
+                return L("“%@” no longer exists.", url.lastPathComponent)
             case .readOnly(let url):
-                return "“\(url.lastPathComponent)” is read-only."
+                return L("“%@” is read-only.", url.lastPathComponent)
             case .notRegularFile(let url):
-                return "“\(url.lastPathComponent)” is not a regular file and cannot be saved in place."
+                return L("“%@” is not a regular file and cannot be saved in place.", url.lastPathComponent)
             case .writeFailed(let url, _, _):
-                return "“\(url.lastPathComponent)” could not be saved."
+                return L("“%@” could not be saved.", url.lastPathComponent)
             case .verificationFailed(let url, _):
-                return "“\(url.lastPathComponent)” could not be saved: the file did not contain the saved text when read back."
+                return L("“%@” could not be saved: the file did not contain the saved text when read back.",
+                         url.lastPathComponent)
             }
         }
 
@@ -64,19 +65,19 @@ enum DocumentFileWriter {
         var recoverySuggestion: String? {
             switch self {
             case .missing:
-                return "Save a copy to keep your changes."
+                return L("Save a copy to keep your changes.")
             case .readOnly:
-                return "Change its permissions in the Finder, or save a copy."
+                return L("Change its permissions in the Finder, or save a copy.")
             case .notRegularFile:
-                return "Save a copy to keep your changes."
+                return L("Save a copy to keep your changes.")
             case .writeFailed(_, _, let original), .verificationFailed(_, let original):
                 switch original {
                 case .untouched:
-                    return "The file was not changed. Your edits are still in the editor."
+                    return L("The file was not changed. Your edits are still in the editor.")
                 case .restored:
-                    return "The file's previous content was restored. Your edits are still in the editor."
+                    return L("The file's previous content was restored. Your edits are still in the editor.")
                 case .notRestored:
-                    return "The file's previous content could not be restored, so it may be damaged. Your edits are still in the editor — save a copy."
+                    return L("The file's previous content could not be restored, so it may be damaged. Your edits are still in the editor — save a copy.")
                 }
             }
         }

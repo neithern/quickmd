@@ -621,17 +621,17 @@ enum ImageLabel {
 
     static func errorText(alt: String, raw: String, source: ImageSource?,
                           failure: ImageLoadFailure? = nil) -> String {
-        if !alt.isEmpty { return "Image: \(alt)" }
+        if !alt.isEmpty { return L("Image: %@", alt) }
         if case .data(let uri)? = source {
             let tooLarge = failure == .tooLarge || uri.encodedByteCount > DataImageURI.maxEncodedBytes
             return tooLarge
-                ? "Embedded image too large (\(uri.displayLabel))"
-                : "Embedded image could not be shown (\(uri.displayLabel))"
+                ? L("Embedded image too large (%@)", uri.displayLabel)
+                : L("Embedded image could not be shown (%@)", uri.displayLabel)
         }
         // A `data:` URL that did not even parse (no comma): no label to offer,
         // and the text after `data:` is payload.
-        if DataImageURI.hasDataScheme(ImageSource.normalized(raw)) { return "Embedded image could not be shown" }
-        return "Image: \(DisplayString.middleTruncated(raw, maxLength: maxURLLength))"
+        if DataImageURI.hasDataScheme(ImageSource.normalized(raw)) { return L("Embedded image could not be shown") }
+        return L("Image: %@", DisplayString.middleTruncated(raw, maxLength: maxURLLength))
     }
 }
 

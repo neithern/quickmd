@@ -72,7 +72,7 @@ struct ThemePickerView: View {
     private func row(for theme: MarkdownTheme) -> some View {
         HStack(spacing: 8) {
             ThemePreviewBar(theme: theme)
-            Text(theme.name)
+            Text(theme.displayName)
         }
     }
 
@@ -84,8 +84,8 @@ struct ThemePickerView: View {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowedContentTypes = [.json]
-        panel.message = "Choose one or more QuickMD theme JSON files to import."
-        panel.prompt = "Import"
+        panel.message = L("Choose one or more QuickMD theme JSON files to import.")
+        panel.prompt = L("Import")
 
         guard panel.runModal() == .OK else { return }
         for url in panel.urls {

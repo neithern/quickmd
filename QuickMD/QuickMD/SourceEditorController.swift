@@ -1035,8 +1035,8 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
         perform(range: affectedCharRange, replacement: normalized,
                 selection: NSRange(location: end, length: 0))
         // The refused change was a paste, so the step replacing it is one.
-        // AppKit exposes no localized name for it; the app's menus are English.
-        if self.textView.isReadingPasteboard { undoManager.setActionName("Paste") }
+        // AppKit exposes no localized name for it; use the app's own string.
+        if self.textView.isReadingPasteboard { undoManager.setActionName(L("Paste")) }
         return false
     }
 

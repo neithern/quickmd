@@ -643,15 +643,15 @@ class PDFExportManager {
     static func exportToPDF(documentText: String, suggestedName: String = "document",
                             documentURL: URL? = nil) {
         guard !documentText.isEmpty else {
-            showError("No document content to export")
+            showError(L("No document content to export"))
             return
         }
 
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.pdf]
         savePanel.nameFieldStringValue = "\(suggestedName).pdf"
-        savePanel.title = "Export as PDF"
-        savePanel.message = "Choose a location to save the PDF"
+        savePanel.title = L("Export as PDF")
+        savePanel.message = L("Choose a location to save the PDF")
 
         savePanel.begin { response in
             guard response == .OK, let url = savePanel.url else { return }
@@ -671,13 +671,13 @@ class PDFExportManager {
                 guard let pdfData = Self.generateMultiPagePDF(blocks: blocks,
                                                               mermaidImages: mermaidImages,
                                                               documentURL: documentURL) else {
-                    Self.showError("Failed to generate PDF")
+                    Self.showError(L("Failed to generate PDF"))
                     return
                 }
                 do {
                     try pdfData.write(to: url)
                 } catch {
-                    Self.showError("Failed to save PDF: \(error.localizedDescription)")
+                    Self.showError(L("Failed to save PDF: %@", error.localizedDescription))
                 }
             }
         }
@@ -830,10 +830,10 @@ class PDFExportManager {
 
     private static func showError(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = "Export Error"
+        alert.messageText = L("Export Error")
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: L("OK"))
         alert.runModal()
     }
 }
@@ -851,13 +851,13 @@ class PrintManager {
         // Use the same multi-page PDF generation as export
         guard let pdfData = PDFExportManager.generateMultiPagePDF(documentText: documentText,
                                                                   documentURL: documentURL) else {
-            showError("Failed to render document for printing")
+            showError(L("Failed to render document for printing"))
             return
         }
 
         // Create PDFDocument from data
         guard let pdfDocument = PDFDocument(data: pdfData) else {
-            showError("Failed to create PDF for printing")
+            showError(L("Failed to create PDF for printing"))
             return
         }
 
@@ -876,7 +876,7 @@ class PrintManager {
             scalingMode: .pageScaleNone,
             autoRotate: false
         ) else {
-            showError("Failed to create print operation")
+            showError(L("Failed to create print operation"))
             return
         }
 
@@ -891,10 +891,10 @@ class PrintManager {
 
     private static func showError(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = "Print Error"
+        alert.messageText = L("Print Error")
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: L("OK"))
         alert.runModal()
     }
 }

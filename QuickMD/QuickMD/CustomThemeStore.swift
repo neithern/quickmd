@@ -122,7 +122,7 @@ final class CustomThemeStore: ObservableObject {
             let data = try Data(contentsOf: sourceURL)
             let dto = try JSONDecoder().decode(CustomThemeDTO.self, from: data)
             if let problem = dto.validationError {
-                let message = "Import failed: \(problem)"
+                let message = L("Import failed: %@", problem)
                 DispatchQueue.main.async {
                     self.lock.lock()
                     self._lastError = message
@@ -140,7 +140,7 @@ final class CustomThemeStore: ObservableObject {
             reload()
             return true
         } catch {
-            let message = "Import failed: \(error.localizedDescription)"
+            let message = L("Import failed: %@", error.localizedDescription)
             DispatchQueue.main.async {
                 self.lock.lock()
                 self._lastError = message
@@ -216,7 +216,7 @@ struct CustomThemeDTO: Decodable {
     /// (built-ins win in `MarkdownTheme.theme(named:)`).
     var validationError: String? {
         if name == ThemeName.auto || ThemeName.allBuiltIn.contains(name) {
-            return "theme name \u{201C}\(name)\u{201D} collides with a built-in theme — rename it"
+            return L("theme name “%@” collides with a built-in theme — rename it", name)
         }
         let colors: [(field: String, value: String)] = [
             ("textColor", textColor), ("secondaryTextColor", secondaryTextColor),
@@ -229,7 +229,7 @@ struct CustomThemeDTO: Decodable {
         ]
         let bad = colors.filter { !Self.isValidHexColor($0.value) }.map(\.field)
         guard bad.isEmpty else {
-            return "invalid hex color (expected 6 or 8 hex digits) in: \(bad.joined(separator: ", "))"
+            return L("invalid hex color (expected 6 or 8 hex digits) in: %@", bad.joined(separator: ", "))
         }
         return nil
     }
@@ -245,7 +245,7 @@ struct CustomThemeDTO: Decodable {
                 return "\(field) \u{201C}\(value)\u{201D}"
             }
         guard !missing.isEmpty else { return nil }
-        return "font not installed, using the system font instead: \(missing.joined(separator: ", "))"
+        return L("font not installed, using the system font instead: %@", missing.joined(separator: ", "))
     }
 
     /// Same trimming rules as `Color(hex:)`: optional `#`, surrounding whitespace.

@@ -41,7 +41,7 @@ enum ToCDepth {
     /// Lists every heading (the default).
     static let all = 6
     static let choices: [(maxLevel: Int, title: String)] = [
-        (all, "All Headings"), (2, "Up to H2"), (3, "Up to H3"), (4, "Up to H4"),
+        (all, L("All Headings")), (2, L("Up to H2")), (3, L("Up to H3")), (4, L("Up to H4")),
     ]
 
     /// The stored value as one of `choices`. Only `defaults write` can store

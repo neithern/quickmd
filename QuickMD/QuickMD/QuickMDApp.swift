@@ -131,7 +131,7 @@ struct ReadingModeCommand: View {
     @FocusedValue(\.isReadingMode) var isReadingMode
 
     var body: some View {
-        Button(isReadingMode == true ? "Exit Reading Mode" : "Reading Mode") {
+        Button(isReadingMode == true ? L("Exit Reading Mode") : L("Reading Mode")) {
             toggleReadingModeAction?()
         }
         .keyboardShortcut("r", modifiers: [.command, .shift])
@@ -179,7 +179,7 @@ struct SourceEditCommands: View {
     @FocusedValue(\.sourceEditState) var sourceEditState
 
     var body: some View {
-        Button(sourceEditState?.isEditing == true ? "Done Editing" : "Edit Source") {
+        Button(sourceEditState?.isEditing == true ? L("Done Editing") : L("Edit Source")) {
             toggleSourceEditAction?()
         }
         .keyboardShortcut("e", modifiers: [.command, .option])
@@ -288,7 +288,7 @@ struct UpdateMenuButton: View {
 
     var body: some View {
         if updateAvailable, let latest = latestVersion {
-            Button("Update Available — v\(latest)") {
+            Button(L("Update Available — v%@", latest)) {
                 NSWorkspace.shared.open(AppURLs.latestRelease)
             }
         } else if let status = statusText {
@@ -305,9 +305,9 @@ struct UpdateMenuButton: View {
         let fetched = await UpdateChecker.fetchLatestVersion()
         latestVersion = fetched
         if fetched == nil {
-            statusText = "Update check failed — try again later"
+            statusText = L("Update check failed — try again later")
         } else if !updateAvailable {
-            statusText = "You're up to date (v\(currentVersion))"
+            statusText = L("You're up to date (v%@)", currentVersion)
         } else {
             return
         }

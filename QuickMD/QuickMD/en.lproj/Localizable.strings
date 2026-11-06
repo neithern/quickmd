@@ -1,0 +1,268 @@
+/*
+  Localizable.strings — English (development language)
+  QuickMD
+
+  The key is the English source text. Keep it byte-for-byte identical to the
+  literal in Swift (including “curly quotes”, … and —) or the lookup silently
+  falls back to the key.
+
+  Format specifiers: %@ = String, %lld = Int, %% = a literal percent sign.
+  When both files change, run: scripts/check-localizations.py
+*/
+
+/* ===== App & menus ===== */
+"Close" = "Close";
+"QuickMD Help" = "QuickMD Help";
+"Visit qmd.app" = "Visit qmd.app";
+"Support QuickMD ☕" = "Support QuickMD ☕";
+"Buy Me a Coffee" = "Buy Me a Coffee";
+"Ko-fi" = "Ko-fi";
+"Tip Jar" = "Tip Jar";
+"Tip Jar 💝" = "Tip Jar 💝";
+"Bigger" = "Bigger";
+"Smaller" = "Smaller";
+"Actual Size" = "Actual Size";
+"Exit Reading Mode" = "Exit Reading Mode";
+"Reading Mode" = "Reading Mode";
+"Reading Mode (Esc to exit)" = "Reading Mode (Esc to exit)";
+"Table of Contents" = "Table of Contents";
+"Recent Documents" = "Recent Documents";
+"Done Editing" = "Done Editing";
+"Edit Source" = "Edit Source";
+"Save" = "Save";
+"Discard Changes" = "Discard Changes";
+"Copy Markdown" = "Copy Markdown";
+"Reload" = "Reload";
+"Open in External Editor" = "Open in External Editor";
+"Find..." = "Find...";
+"Update Available — v%@" = "Update Available — v%@";
+"Check for Updates…" = "Check for Updates…";
+"Update check failed — try again later" = "Update check failed — try again later";
+"You're up to date (v%@)" = "You're up to date (v%@)";
+
+/* ===== Document chrome ===== */
+"Reset zoom" = "Reset zoom";
+"Reset zoom to %@ (⌘0)" = "Reset zoom to %@ (⌘0)";
+"Copy source" = "Copy source";
+"Reload from disk (⌘R)" = "Reload from disk (⌘R)";
+"Edit" = "Edit";
+"Edit source (⌥⌘E)" = "Edit source (⌥⌘E)";
+"Save (⌘S)" = "Save (⌘S)";
+"Done" = "Done";
+"Done editing (Esc)" = "Done editing (Esc)";
+"Support" = "Support";
+"Support QuickMD development" = "Support QuickMD development";
+"Copy section" = "Copy section";
+"Copy code" = "Copy code";
+"Show recent documents (⇧⌘D)" = "Show recent documents (⇧⌘D)";
+"Hide recent documents (⇧⌘D)" = "Hide recent documents (⇧⌘D)";
+"Hide recent documents" = "Hide recent documents";
+"Clear list" = "Clear list";
+"Remove from list" = "Remove from list";
+
+/* ===== Search ===== */
+"Search..." = "Search...";
+"0 results" = "0 results";
+"Previous match" = "Previous match";
+"Next match" = "Next match";
+"Close search (Esc)" = "Close search (Esc)";
+
+/* ===== Sidebars ===== */
+"Documents" = "Documents";
+"No documents opened yet" = "No documents opened yet";
+"Contents" = "Contents";
+"Hide table of contents (⇧⌘T)" = "Hide table of contents (⇧⌘T)";
+"Hide table of contents" = "Hide table of contents";
+"No headings up to H%lld" = "No headings up to H%lld";
+"Show All Headings" = "Show All Headings";
+"Show Headings" = "Show Headings";
+"All Headings" = "All Headings";
+"Up to H2" = "Up to H2";
+"Up to H3" = "Up to H3";
+"Up to H4" = "Up to H4";
+
+/* ===== Settings ===== */
+"General" = "General";
+"Themes" = "Themes";
+"Fonts" = "Fonts";
+"Editor" = "Editor";
+"Copy selected text automatically" = "Copy selected text automatically";
+"Selection" = "Selection";
+"Selected text is copied to the clipboard as soon as you finish selecting. Off by default because it replaces whatever you copied in another app." = "Selected text is copied to the clipboard as soon as you finish selecting. Off by default because it replaces whatever you copied in another app.";
+"Show" = "Show";
+"Contents Sidebar" = "Contents Sidebar";
+"Also in the sidebar's context menu." = "Also in the sidebar's context menu.";
+"Size" = "Size";
+"Body text" = "Body text";
+"Code" = "Code";
+"System (San Francisco)" = "System (San Francisco)";
+"System (SF Mono)" = "System (SF Mono)";
+"Default zoom" = "Default zoom";
+"Documents open at this size. ⌘+ and ⌘− zoom one window; ⌘0 returns to this size. Print and PDF export always use 100%." = "Documents open at this size. ⌘+ and ⌘− zoom one window; ⌘0 returns to this size. Print and PDF export always use 100%.";
+"Applies to the document, print and PDF export — the app's own controls keep the system font. A custom theme can override these with bodyFontFamily / codeFontFamily in its JSON." = "Applies to the document, print and PDF export — the app's own controls keep the system font. A custom theme can override these with bodyFontFamily / codeFontFamily in its JSON.";
+"%@ (not installed)" = "%@ (not installed)";
+"Theme" = "Theme";
+"Built-in" = "Built-in";
+"Custom theme" = "Custom theme";
+"Custom" = "Custom";
+"Auto" = "Auto";
+"Import Theme…" = "Import Theme…";
+"Open Themes Folder" = "Open Themes Folder";
+"Choose one or more QuickMD theme JSON files to import." = "Choose one or more QuickMD theme JSON files to import.";
+"Import" = "Import";
+"External editor" = "External editor";
+"System Default" = "System Default";
+"Open in External Editor (⌘E)" = "Open in External Editor (⌘E)";
+"Tip: enable auto-save in your editor and QuickMD becomes a live preview — it reloads automatically whenever the file changes on disk." = "Tip: enable auto-save in your editor and QuickMD becomes a live preview — it reloads automatically whenever the file changes on disk.";
+"Other…" = "Other…";
+
+/* ===== Images & diagrams ===== */
+"Click to enlarge image" = "Click to enlarge image";
+"Enlarge image" = "Enlarge image";
+"Enlarge image: %@" = "Enlarge image: %@";
+"Enlarge SVG image" = "Enlarge SVG image";
+"SVG could not be decoded" = "SVG could not be decoded";
+"Enlarge diagram" = "Enlarge diagram";
+"Click to enlarge diagram" = "Click to enlarge diagram";
+"Zoom diagram" = "Zoom diagram";
+"Zoom out" = "Zoom out";
+"Fit diagram to window" = "Fit diagram to window";
+"Zoom in" = "Zoom in";
+"Mermaid Diagram" = "Mermaid Diagram";
+"Can’t load “%@”" = "Can’t load “%@”";
+"Grant Folder Access" = "Grant Folder Access";
+"Image" = "Image";
+
+/* ===== Document status ===== */
+"Parsing…" = "Parsing…";
+"Rendering…" = "Rendering…";
+"This file changed on disk while you were editing." = "This file changed on disk while you were editing.";
+"Keep My Version" = "Keep My Version";
+"Load Disk Version" = "Load Disk Version";
+"Close Tab" = "Close Tab";
+"Reloaded" = "Reloaded";
+"Reloaded · no changes" = "Reloaded · no changes";
+"Couldn't read the file" = "Couldn't read the file";
+"Zoom %lld%%" = "Zoom %lld%%";
+"Open “%@:” link?" = "Open “%@:” link?";
+"This link opens another application:\n%@" = "This link opens another application:\n%@";
+"Open" = "Open";
+"Cancel" = "Cancel";
+
+/* ===== Copy summary ===== */
+"Copied %@ character" = "Copied %@ character";
+"Copied %@ characters" = "Copied %@ characters";
+"Copied %@ characters · %@ words" = "Copied %@ characters · %@ words";
+
+/* ===== File watching ===== */
+"this location" = "this location";
+"File no longer exists at %@" = "File no longer exists at %@";
+"File can’t be read at %@" = "File can’t be read at %@";
+
+/* ===== Source Edit ===== */
+"Already editing the source." = "Already editing the source.";
+"This document has no file to edit." = "This document has no file to edit.";
+"“%@” no longer exists." = "“%@” no longer exists.";
+"“%@” could not be read." = "“%@” could not be read.";
+"“%@” is too large to edit here (the limit is 2 MB)." = "“%@” is too large to edit here (the limit is 2 MB).";
+"“%@” is read-only." = "“%@” is read-only.";
+"“%@” can’t be edited safely: saving would change parts of the file you did not edit." = "“%@” can’t be edited safely: saving would change parts of the file you did not edit.";
+"Untitled" = "Untitled";
+"Saved" = "Saved";
+"Saved · line endings unified to %@" = "Saved · line endings unified to %@";
+"Copy saved" = "Copy saved";
+"The copy could not be saved: %@" = "The copy could not be saved: %@";
+"%@ copy" = "%@ copy";
+"%@ copy.%@" = "%@ copy.%@";
+"“%@” has been changed by another application." = "“%@” has been changed by another application.";
+"Save Anyway replaces the other version with yours. Load Disk Version shows the file as it is on disk; Undo brings your text back." = "Save Anyway replaces the other version with yours. Load Disk Version shows the file as it is on disk; Undo brings your text back.";
+"Save Anyway" = "Save Anyway";
+"Save as UTF-8" = "Save as UTF-8";
+"“%@” uses %@, which cannot store some of the characters you typed." = "“%@” uses %@, which cannot store some of the characters you typed.";
+"Saving as UTF-8 keeps every character you typed." = "Saving as UTF-8 keeps every character you typed.";
+"Save a Copy…" = "Save a Copy…";
+"OK" = "OK";
+"Save a Copy" = "Save a Copy";
+"Do you want to save the changes you made to “%@”?" = "Do you want to save the changes you made to “%@”?";
+"Your changes will be lost if you don’t save them." = "Your changes will be lost if you don’t save them.";
+"Don’t Save" = "Don’t Save";
+
+/* ===== External editor ===== */
+"⌘E opens the document at the line you are reading (%@)." = "⌘E opens the document at the line you are reading (%@).";
+"Opened in %@ at line %lld" = "Opened in %@ at line %lld";
+"Opened in %@" = "Opened in %@";
+"Choose Your External Editor" = "Choose Your External Editor";
+"QuickMD will open documents in this app when you press ⌘E.\nYou can change it anytime in Settings → Editor." = "QuickMD will open documents in this app when you press ⌘E.\nYou can change it anytime in Settings → Editor.";
+"Use This Editor" = "Use This Editor";
+"Choose the application ⌘E should open documents in." = "Choose the application ⌘E should open documents in.";
+"Select" = "Select";
+
+/* ===== Folder access ===== */
+"Grant Access" = "Grant Access";
+"QuickMD needs access to this folder to display local images and open linked files. This is a one-time prompt per folder." = "QuickMD needs access to this folder to display local images and open linked files. This is a one-time prompt per folder.";
+
+/* ===== Custom themes ===== */
+"Import failed: %@" = "Import failed: %@";
+"theme name “%@” collides with a built-in theme — rename it" = "theme name “%@” collides with a built-in theme — rename it";
+"invalid hex color (expected 6 or 8 hex digits) in: %@" = "invalid hex color (expected 6 or 8 hex digits) in: %@";
+"font not installed, using the system font instead: %@" = "font not installed, using the system font instead: %@";
+
+/* ===== Saving files ===== */
+"“%@” is not a regular file and cannot be saved in place." = "“%@” is not a regular file and cannot be saved in place.";
+"“%@” could not be saved." = "“%@” could not be saved.";
+"“%@” could not be saved: the file did not contain the saved text when read back." = "“%@” could not be saved: the file did not contain the saved text when read back.";
+"Save a copy to keep your changes." = "Save a copy to keep your changes.";
+"Change its permissions in the Finder, or save a copy." = "Change its permissions in the Finder, or save a copy.";
+"The file was not changed. Your edits are still in the editor." = "The file was not changed. Your edits are still in the editor.";
+"The file's previous content was restored. Your edits are still in the editor." = "The file's previous content was restored. Your edits are still in the editor.";
+"The file's previous content could not be restored, so it may be damaged. Your edits are still in the editor — save a copy." = "The file's previous content could not be restored, so it may be damaged. Your edits are still in the editor — save a copy.";
+
+/* ===== Image placeholders ===== */
+"Image: %@" = "Image: %@";
+"Embedded image too large (%@)" = "Embedded image too large (%@)";
+"Embedded image could not be shown (%@)" = "Embedded image could not be shown (%@)";
+"Embedded image could not be shown" = "Embedded image could not be shown";
+"embedded non-image data, %@" = "embedded non-image data, %@";
+"embedded image, %@" = "embedded image, %@";
+"embedded %@ image, %@" = "embedded %@ image, %@";
+
+/* ===== PDF export & printing ===== */
+"No document content to export" = "No document content to export";
+"Export as PDF" = "Export as PDF";
+"Choose a location to save the PDF" = "Choose a location to save the PDF";
+"Failed to generate PDF" = "Failed to generate PDF";
+"Failed to save PDF: %@" = "Failed to save PDF: %@";
+"Export Error" = "Export Error";
+"Failed to render document for printing" = "Failed to render document for printing";
+"Failed to create PDF for printing" = "Failed to create PDF for printing";
+"Failed to create print operation" = "Failed to create print operation";
+"Print Error" = "Print Error";
+"Export as PDF…" = "Export as PDF…";
+"Print…" = "Print…";
+
+/* ===== Tip jar ===== */
+"Support QuickMD" = "Support QuickMD";
+"QuickMD is free and always will be. If you find it useful, consider leaving a tip!" = "QuickMD is free and always will be. If you find it useful, consider leaving a tip!";
+"Loading..." = "Loading...";
+"Unable to load tip options" = "Unable to load tip options";
+"Try Again" = "Try Again";
+"Processing..." = "Processing...";
+"Thank you for your support!" = "Thank you for your support!";
+"Tips are one-time purchases. Thank you!" = "Tips are one-time purchases. Thank you!";
+"Small Tip" = "Small Tip";
+"Medium Tip" = "Medium Tip";
+"Large Tip" = "Large Tip";
+"Verification failed: %@" = "Verification failed: %@";
+
+/* ===== Context menu & undo ===== */
+"Copy" = "Copy";
+"Select All" = "Select All";
+"Look Up “%@”" = "Look Up “%@”";
+"Paste" = "Paste";
+
+/* ===== GFM alert titles ===== */
+"Note" = "Note";
+"Tip" = "Tip";
+"Important" = "Important";
+"Warning" = "Warning";
+"Caution" = "Caution";

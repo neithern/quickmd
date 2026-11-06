@@ -65,7 +65,7 @@ struct TableOfContentsView: View {
                 // Every heading is deeper than the chosen depth
                 if shown.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("No headings up to H\(level)")
+                        Text(L("No headings up to H%lld", level))
                             .foregroundColor(.secondary)
                         Button("Show All Headings") { maxLevel = ToCDepth.all }
                             .buttonStyle(.link)

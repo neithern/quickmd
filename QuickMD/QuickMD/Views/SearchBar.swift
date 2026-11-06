@@ -30,7 +30,7 @@ struct SearchBar: View {
                     }
 
                 if !searchText.isEmpty {
-                    Text(matchCount > 0 ? "\(currentMatch + 1)/\(matchCount)" : "0 results")
+                    Text(matchCount > 0 ? "\(currentMatch + 1)/\(matchCount)" : L("0 results"))
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                         .monospacedDigit()

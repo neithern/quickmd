@@ -81,8 +81,8 @@ struct FontPickerView: View {
 
     @ViewBuilder
     private func familyPicker(_ label: String, selection: Binding<String>, systemLabel: String) -> some View {
-        Picker(label, selection: selection) {
-            Text(systemLabel).tag("")
+        Picker(L(label), selection: selection) {
+            Text(L(systemLabel)).tag("")
             Divider()
             ForEach(families, id: \.self) { family in
                 Text(family).tag(family)
@@ -92,7 +92,7 @@ struct FontPickerView: View {
             // selection. It renders with the system font until changed.
             if !selection.wrappedValue.isEmpty, !families.contains(selection.wrappedValue) {
                 Divider()
-                Text("\(selection.wrappedValue) (not installed)").tag(selection.wrappedValue)
+                Text(L("%@ (not installed)", selection.wrappedValue)).tag(selection.wrappedValue)
             }
         }
         .pickerStyle(.menu)
@@ -109,7 +109,7 @@ struct FontPickerView: View {
     }
 
     private func header(_ title: String) -> some View {
-        Text(title)
+        Text(L(title))
             .font(.system(size: 11, weight: .semibold))
             .foregroundColor(.secondary)
     }

@@ -81,8 +81,8 @@ enum ExternalEditorManager {
     /// The Settings → Editor explanation (E-D4), built from the table so the
     /// two can never disagree.
     static var lineLinkExplanation: String {
-        "\u{2318}E opens the document at the line you are reading ("
-            + lineLinkEditors.map(\.name).joined(separator: ", ") + ")."
+        L("⌘E opens the document at the line you are reading (%@).",
+          lineLinkEditors.map(\.name).joined(separator: ", "))
     }
 
     /// The URL that opens `fileURL` at `line` (1-based) in the editor with
@@ -139,9 +139,9 @@ enum ExternalEditorManager {
     /// E-D4 toast copy.
     static func toastText(for result: OpenResult) -> String {
         if let line = result.line {
-            return "Opened in \(result.appName) at line \(line)"
+            return L("Opened in %@ at line %lld", result.appName, line)
         }
-        return "Opened in \(result.appName)"
+        return L("Opened in %@", result.appName)
     }
 
     static func appURL(for bundleID: String) -> URL? {
@@ -256,16 +256,16 @@ enum ExternalEditorManager {
         options.append(("TextEdit", "com.apple.TextEdit"))
 
         let alert = NSAlert()
-        alert.messageText = "Choose Your External Editor"
-        alert.informativeText = "QuickMD will open documents in this app when you press \u{2318}E.\nYou can change it anytime in Settings \u{2192} Editor."
-        alert.addButton(withTitle: "Use This Editor")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = L("Choose Your External Editor")
+        alert.informativeText = L("QuickMD will open documents in this app when you press ⌘E.\nYou can change it anytime in Settings → Editor.")
+        alert.addButton(withTitle: L("Use This Editor"))
+        alert.addButton(withTitle: L("Cancel"))
 
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 280, height: 25), pullsDown: false)
         for option in options {
             popup.addItem(withTitle: option.title)
         }
-        popup.addItem(withTitle: "Other\u{2026}")
+        popup.addItem(withTitle: L("Other…"))
         alert.accessoryView = popup
 
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }
@@ -290,8 +290,8 @@ enum ExternalEditorManager {
         panel.canChooseFiles = true
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.message = "Choose the application \u{2318}E should open documents in."
-        panel.prompt = "Select"
+        panel.message = L("Choose the application ⌘E should open documents in.")
+        panel.prompt = L("Select")
 
         guard panel.runModal() == .OK, let url = panel.url,
               let bundleID = Bundle(url: url)?.bundleIdentifier,

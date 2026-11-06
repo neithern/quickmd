@@ -76,7 +76,7 @@ class TipJarManager: ObservableObject {
                     await transaction.finish()
                     purchaseState = .purchased
                 case .unverified(_, let error):
-                    purchaseState = .failed("Verification failed: \(error.localizedDescription)")
+                    purchaseState = .failed(L("Verification failed: %@", error.localizedDescription))
                 }
             case .userCancelled:
                 purchaseState = .ready
@@ -112,11 +112,11 @@ extension Product {
     var tipName: String {
         switch id {
         case "pl.falami.studio.QuickMD.tip.small":
-            return "Small Tip"
+            return L("Small Tip")
         case "pl.falami.studio.QuickMD.tip.medium":
-            return "Medium Tip"
+            return L("Medium Tip")
         case "pl.falami.studio.QuickMD.tip.large":
-            return "Large Tip"
+            return L("Large Tip")
         default:
             return displayName
         }

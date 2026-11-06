@@ -336,8 +336,8 @@ struct ZoomResetButton: View {
     private var percentText: String { DefaultZoom.title(for: fontScale) }
 
     var body: some View {
-        ChromePill(theme: theme, title: "Reset zoom",
-                   help: "Reset zoom to \(DefaultZoom.title(for: defaultScale)) (⌘0)", action: action) {
+        ChromePill(theme: theme, title: L("Reset zoom"),
+                   help: L("Reset zoom to %@ (⌘0)", DefaultZoom.title(for: defaultScale)), action: action) {
             Text(percentText)
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
         }
@@ -353,7 +353,7 @@ struct CopySourceButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Copy source", help: "Copy source", action: action) {
+        ChromePill(theme: theme, title: L("Copy source"), help: L("Copy source"), action: action) {
             Image(systemName: "doc.on.doc")
                 .font(.system(size: 11))
         }
@@ -368,7 +368,7 @@ struct ReloadDocumentButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Reload", help: "Reload from disk (⌘R)", action: action) {
+        ChromePill(theme: theme, title: L("Reload"), help: L("Reload from disk (⌘R)"), action: action) {
             Image(systemName: "arrow.clockwise")
                 .font(.system(size: 11))
         }
@@ -391,8 +391,8 @@ struct EditSourceButton: View {
     var body: some View {
         ChromePill(
             theme: theme,
-            title: "Edit",
-            help: "Edit source (⌥⌘E)",
+            title: L("Edit"),
+            help: L("Edit source (⌥⌘E)"),
             action: action
         ) {
             Image(systemName: "pencil")
@@ -414,7 +414,7 @@ struct SourceSaveButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Save", help: "Save (⌘S)", action: action) {
+        ChromePill(theme: theme, title: L("Save"), help: L("Save (⌘S)"), action: action) {
             Image(systemName: "square.and.arrow.down")
                 .font(.system(size: 11))
         }
@@ -429,7 +429,7 @@ struct SourceDoneButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Done", help: "Done editing (Esc)", action: action) {
+        ChromePill(theme: theme, title: L("Done"), help: L("Done editing (Esc)"), action: action) {
             Image(systemName: "checkmark")
                 .font(.system(size: 11))
         }
@@ -447,8 +447,8 @@ struct TipJarButton: View {
     var body: some View {
         ChromePill(
             theme: theme,
-            title: "Tip Jar",
-            help: "Support QuickMD",
+            title: L("Tip Jar"),
+            help: L("Support QuickMD"),
             tint: .pink,
             action: { openWindow(id: "tip-jar") }
         ) {
@@ -488,7 +488,7 @@ struct SupportButton: View {
         } label: {
             // Menu labels render once on macOS and ignore later state changes,
             // so the label is `.fixed` and hover feedback lives on the Menu.
-            ChromePillLabel(theme: theme, title: "Support") {
+            ChromePillLabel(theme: theme, title: L("Support")) {
                 Text("☕")
                     .font(.system(size: 12))
             }

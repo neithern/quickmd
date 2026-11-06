@@ -76,6 +76,9 @@ Perfect for developers, writers, students, and anyone who works with Markdown da
 - Settings panel (`⌘,`) with color and font previews
 - Dark mode follows the system, or pick a fixed theme; theme and fonts persist across restarts
 
+### Languages
+- English and Simplified Chinese UI, following the macOS per-app language setting. Adding a language needs only a new `Localizable.strings` — see [docs/localization.md](docs/localization.md).
+
 ### Privacy Focused
 - No analytics, no tracking
 - Works completely offline (except for remote images and the optional Check for Updates)
@@ -213,6 +216,7 @@ QuickMD/
 │   └── Resources/                                                   # bundled Mermaid.js + template
 ├── QuickMDTests/               # Unit tests
 ├── docs/themes/                # Custom theme schema + starter themes
+├── docs/localization.md        # i18n scheme, key rules, adding a language
 └── CHANGELOG.md                # Version history
 ```
 

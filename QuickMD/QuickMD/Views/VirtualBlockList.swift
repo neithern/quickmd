@@ -2267,10 +2267,10 @@ final class SelectionController: NSObject {
         }
         // Explicit target: validation then asks the table (Copy is enabled iff
         // the selection is non-empty), whatever else is first responder.
-        let copy = NSMenuItem(title: "Copy", action: #selector(BlockTableView.copy(_:)), keyEquivalent: "")
+        let copy = NSMenuItem(title: L("Copy"), action: #selector(BlockTableView.copy(_:)), keyEquivalent: "")
         copy.target = tableView
         menu.addItem(copy)
-        let all = NSMenuItem(title: "Select All", action: #selector(BlockTableView.selectAll(_:)), keyEquivalent: "")
+        let all = NSMenuItem(title: L("Select All"), action: #selector(BlockTableView.selectAll(_:)), keyEquivalent: "")
         all.target = tableView
         menu.addItem(all)
         return menu
@@ -2298,7 +2298,7 @@ final class SelectionController: NSObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, text.count <= 64,
               !text.unicodeScalars.contains(where: { $0 == "\u{FFFC}" }) else { return nil }
-        let item = NSMenuItem(title: "Look Up \u{201C}\(text)\u{201D}",
+        let item = NSMenuItem(title: L("Look Up “%@”", text),
                               action: #selector(lookUp(_:)), keyEquivalent: "")
         item.target = self
         item.representedObject = LookUpRequest(textView: textView, range: word)

@@ -114,7 +114,7 @@ struct ImageBlockView: View {
         }
         .buttonStyle(.plain)
         .help("Click to enlarge image")
-        .accessibilityLabel(alt.isEmpty ? "Enlarge image" : "Enlarge image: \(alt)")
+        .accessibilityLabel(alt.isEmpty ? L("Enlarge image") : L("Enlarge image: %@", alt))
     }
 
     /// GitHub parity (D4): the column cap from `ImageBlock.displayWidth`, but
@@ -159,7 +159,7 @@ struct ImageBlockView: View {
             Image(systemName: "lock.shield")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary)
-            Text("Can\u{2019}t load \u{201C}\(fileURL.lastPathComponent)\u{201D}")
+            Text(L("Can\u{2019}t load \u{201C}%@\u{201D}", fileURL.lastPathComponent))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.secondary)
             Button("Grant Folder Access") {
@@ -272,7 +272,7 @@ struct GraphicPreviewOverlay: View {
             case .image(let image, let title, let fileURL, let loadDetail):
                 VStack(spacing: 0) {
                     HStack {
-                        Text(title.isEmpty ? "Image" : title)
+                        Text(title.isEmpty ? L("Image") : title)
                             .lineLimit(1)
                             .foregroundColor(theme.textColor)
                         Spacer()
