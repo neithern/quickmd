@@ -413,3 +413,508 @@ enum HTMLImageSyntax {
         }
     }
 }
+
+/// Converts a practical HTML subset to Markdown syntax understood by the
+/// existing block and inline renderers. Unsupported tags remain untouched.
+enum HTMLMarkdownConverter {
+
+    struct Output {
+        let lines: [String]
+        let sourceLines: [Int]
+        let htmlTables: [String: [[HTMLTableCell]]]
+    }
+
+    private struct Tag {
+        let name: String
+        let isClosing: Bool
+        let isSelfClosing: Bool
+        let attributes: [String: String]
+        let end: Int
+    }
+
+    private struct TableCell {
+        var text: String
+        let alignment: String?
+        let isHeader: Bool
+        var images: [HTMLTableImage]
+    }
+
+    private struct TableState {
+        let sourceLine: Int
+        var rows: [[TableCell]] = []
+        var row: [TableCell] = []
+        var cell = ""
+        var cellAlignment: String?
+        var cellIsHeader = false
+        var cellImages: [HTMLTableImage] = []
+        var inCell = false
+    }
+
+    private struct Builder {
+        var lines: [String] = []
+        var sourceLines: [Int] = []
+        var current = ""
+        var currentSource: Int?
+
+        mutating func append(_ text: String, sourceLine: Int) {
+            for character in text {
+                if character == "\n" {
+                    flush(sourceLine: sourceLine)
+                } else {
+                    if currentSource == nil { currentSource = sourceLine }
+                    current.append(character)
+                }
+            }
+        }
+
+        mutating func flush(sourceLine: Int) {
+            lines.append(current)
+            sourceLines.append(currentSource ?? sourceLine)
+            current = ""
+            currentSource = nil
+        }
+
+        mutating func finish(sourceLine: Int) {
+            if !current.isEmpty || lines.isEmpty { flush(sourceLine: sourceLine) }
+        }
+    }
+
+    private static let blockTags: Set<String> = [
+        "p", "div", "section", "article", "main", "header", "footer", "nav", "center",
+    ]
+    private static let voidTags: Set<String> = ["br", "hr", "img"]
+
+    static func convert(lines: [String], sourceLines: [Int]) -> Output {
+        var builder = Builder()
+        var table: TableState?
+        var links: [String?] = []
+        var listCounters: [Int?] = []
+        var mathContainers: [String] = []
+        var htmlTables: [String: [[HTMLTableCell]]] = [:]
+        var htmlTableIndex = 0
+        var fence: (character: Character, length: Int)?
+        var inDisplayMath = false
+        var index = 0
+
+        while index < lines.count {
+            let line = lines[index]
+            let sourceLine = index < sourceLines.count ? sourceLines[index] : index
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            if let opening = fence {
+                builder.append(line, sourceLine: sourceLine)
+                builder.append("\n", sourceLine: sourceLine)
+                if closesFence(trimmed, opening: opening) { fence = nil }
+                index += 1
+                continue
+            }
+            if let opening = fenceOpening(trimmed) {
+                fence = opening
+                builder.append(line, sourceLine: sourceLine)
+                builder.append("\n", sourceLine: sourceLine)
+                index += 1
+                continue
+            }
+            if inDisplayMath {
+                builder.append(line, sourceLine: sourceLine)
+                builder.append("\n", sourceLine: sourceLine)
+                if trimmed.contains("$$") { inDisplayMath = false }
+                index += 1
+                continue
+            }
+            if trimmed.hasPrefix("$$") {
+                inDisplayMath = !trimmed.dropFirst(2).contains("$$")
+                builder.append(line, sourceLine: sourceLine)
+                builder.append("\n", sourceLine: sourceLine)
+                index += 1
+                continue
+            }
+
+            // Existing scanner owns standalone image lines. Wrapper-only lines
+            // remain no-ops except for table structure, which this converter
+            // must retain until its rows are assembled.
+            if table == nil,
+               case .tags(let images, _)? = HTMLImageSyntax.scan(line[...]) {
+                let isTableStructure = ["<table", "</table", "<tr", "</tr", "<td", "</td", "<th", "</th"]
+                    .contains { trimmed.lowercased().contains($0) }
+                if !images.isEmpty || !isTableStructure {
+                    builder.append(line, sourceLine: sourceLine)
+                    builder.append("\n", sourceLine: sourceLine)
+                    index += 1
+                    continue
+                }
+            }
+
+            if trimmed.lowercased().hasPrefix("<svg") {
+                var svgLines = [line]
+                let svgSource = sourceLine
+                let svgStartIndex = index
+                while !svgLines.joined(separator: "\n").lowercased().contains("</svg>") && index + 1 < lines.count {
+                    index += 1
+                    svgLines.append(lines[index])
+                }
+                guard svgLines.joined(separator: "\n").lowercased().contains("</svg>") else {
+                    for svgLine in svgLines {
+                        builder.append(svgLine, sourceLine: svgSource)
+                        builder.append("\n", sourceLine: svgSource)
+                    }
+                    index += 1
+                    continue
+                }
+                builder.append("\n\n```svg\n", sourceLine: svgSource)
+                for (offset, svgLine) in svgLines.enumerated() {
+                    let mappedIndex = svgStartIndex + offset
+                    let mappedLine = mappedIndex < sourceLines.count ? sourceLines[mappedIndex] : svgSource
+                    builder.append(svgLine, sourceLine: mappedLine)
+                    builder.append("\n", sourceLine: svgSource)
+                }
+                builder.append("```\n\n", sourceLine: svgSource)
+                index += 1
+                continue
+            }
+
+            let characters = Array(line)
+            var output = ""
+            var position = 0
+            while position < characters.count {
+                guard characters[position] == "<", let tag = parseTag(characters, at: position) else {
+                    let character = String(characters[position])
+                    if var activeTable = table, activeTable.inCell {
+                        activeTable.cell += character
+                        table = activeTable
+                    } else {
+                        output += character
+                    }
+                    position += 1
+                    continue
+                }
+                position = tag.end
+
+                if tag.name == "table" {
+                    if tag.isClosing, let activeTable = table {
+                        append(output, sourceLine: sourceLine, to: &builder)
+                        var completedTable = activeTable
+                        if completedTable.inCell {
+                            completedTable.row.append(TableCell(
+                                text: completedTable.cell.trimmingCharacters(in: .whitespacesAndNewlines),
+                                alignment: completedTable.cellAlignment,
+                                isHeader: completedTable.cellIsHeader,
+                                images: completedTable.cellImages))
+                        }
+                        if !completedTable.row.isEmpty { completedTable.rows.append(completedTable.row) }
+                        if completedTable.rows.flatMap({ $0 }).contains(where: { !$0.images.isEmpty }) {
+                            let marker = "\u{001E}quickmd-html-table-\(htmlTableIndex)"
+                            htmlTableIndex += 1
+                            htmlTables[marker] = completedTable.rows.map { row in
+                                row.map { cell in
+                                    HTMLTableCell(text: HTMLImageSyntax.decodeEntities(cell.text),
+                                                  alignment: tableAlignment(cell.alignment),
+                                                  isHeader: cell.isHeader, images: cell.images)
+                                }
+                            }
+                            builder.append("\n\n\(marker)\n\n", sourceLine: completedTable.sourceLine)
+                        } else {
+                            appendTable(completedTable, to: &builder)
+                        }
+                        table = nil
+                    } else if !tag.isClosing, table == nil {
+                        table = TableState(sourceLine: sourceLine)
+                    }
+                    continue
+                }
+
+                if var activeTable = table {
+                    switch tag.name {
+                    case "tr":
+                        if !tag.isClosing, !activeTable.row.isEmpty {
+                            activeTable.rows.append(activeTable.row)
+                            activeTable.row = []
+                        } else if tag.isClosing, !activeTable.row.isEmpty {
+                            if activeTable.inCell {
+                                activeTable.row.append(TableCell(
+                                    text: activeTable.cell.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    alignment: activeTable.cellAlignment,
+                                    isHeader: activeTable.cellIsHeader,
+                                    images: activeTable.cellImages))
+                                activeTable.cell = ""
+                                activeTable.cellAlignment = nil
+                                activeTable.cellIsHeader = false
+                                activeTable.cellImages = []
+                                activeTable.inCell = false
+                            }
+                            activeTable.rows.append(activeTable.row)
+                            activeTable.row = []
+                        }
+                    case "th", "td":
+                        if tag.isClosing, activeTable.inCell {
+                            activeTable.row.append(TableCell(
+                                text: activeTable.cell.trimmingCharacters(in: .whitespacesAndNewlines),
+                                alignment: activeTable.cellAlignment,
+                                isHeader: activeTable.cellIsHeader,
+                                images: activeTable.cellImages))
+                            activeTable.cell = ""
+                            activeTable.cellAlignment = nil
+                            activeTable.cellIsHeader = false
+                            activeTable.cellImages = []
+                            activeTable.inCell = false
+                        } else if !tag.isClosing {
+                            if activeTable.inCell {
+                                activeTable.row.append(TableCell(
+                                    text: activeTable.cell.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    alignment: activeTable.cellAlignment,
+                                    isHeader: activeTable.cellIsHeader,
+                                    images: activeTable.cellImages))
+                            }
+                            activeTable.cell = ""
+                            activeTable.cellAlignment = tag.attributes["align"]?.lowercased()
+                            activeTable.cellIsHeader = tag.name == "th"
+                            activeTable.cellImages = []
+                            activeTable.inCell = true
+                        }
+                    case "br":
+                        if activeTable.inCell { activeTable.cell += "  " }
+                    case "img":
+                        if activeTable.inCell, let image = htmlTableImage(tag.attributes) {
+                            activeTable.cellImages.append(image)
+                        }
+                    default:
+                        if activeTable.inCell {
+                            activeTable.cell += inlineMarker(for: tag, links: &links)
+                        }
+                    }
+                    table = activeTable
+                    continue
+                }
+
+                switch tag.name {
+                case "b", "strong": output += tag.isClosing ? "**" : "**"
+                case "i", "em": output += "*"
+                case "s", "strike", "del": output += "~~"
+                case "code": output += "`"
+                case "span":
+                    if tag.isClosing {
+                        if mathContainers.last == "span" {
+                            mathContainers.removeLast()
+                            output += "$"
+                        }
+                    } else {
+                        let classes = (tag.attributes["class"] ?? "").lowercased().split(whereSeparator: \.isWhitespace)
+                        if classes.contains("math") || classes.contains("math-inline") {
+                            output += "$"
+                            mathContainers.append("span")
+                        }
+                    }
+                case "div":
+                    if tag.isClosing, mathContainers.last == "div" {
+                        mathContainers.removeLast()
+                        output += "$$\n\n"
+                    } else {
+                        let classes = (tag.attributes["class"] ?? "").lowercased().split(whereSeparator: \.isWhitespace)
+                        if !tag.isClosing && (classes.contains("math") || classes.contains("math-display")) {
+                            mathContainers.append("div")
+                            output += "\n\n$$"
+                        } else {
+                            output += "\n\n"
+                        }
+                    }
+                case "a":
+                    if tag.isClosing {
+                        if let destination = links.popLast() ?? nil {
+                            output += "](<\(markdownDestination(destination))>)"
+                        }
+                    } else {
+                        let destination = tag.attributes["href"].map(HTMLImageSyntax.decodeEntities)
+                        links.append(destination)
+                        if destination != nil { output += "[" }
+                    }
+                case "img":
+                    if let source = tag.attributes["src"] {
+                        let alt = tag.attributes["alt"] ?? ""
+                        output += "![\(alt)](<\(markdownDestination(source))>)"
+                    }
+                case "br": output += "  \n"
+                case "hr": output += "\n\n---\n\n"
+                case "ul":
+                    if tag.isClosing {
+                        if !listCounters.isEmpty { listCounters.removeLast() }
+                        output += "\n\n"
+                    }
+                    else { listCounters.append(nil); output += "\n" }
+                case "ol":
+                    if tag.isClosing {
+                        if !listCounters.isEmpty { listCounters.removeLast() }
+                        output += "\n\n"
+                    }
+                    else { listCounters.append(1); output += "\n" }
+                case "li":
+                    if !tag.isClosing {
+                        let indent = String(repeating: "  ", count: max(listCounters.count - 1, 0))
+                        if let last = listCounters.indices.last, let number = listCounters[last] {
+                            output += "\n\(indent)\(number). "
+                            listCounters[last] = number + 1
+                        } else {
+                            output += "\n\(indent)- "
+                        }
+                    }
+                case "blockquote": output += tag.isClosing ? "\n\n" : "\n\n> "
+                case "h1", "h2", "h3", "h4", "h5", "h6":
+                    if tag.isClosing { output += "\n\n" }
+                    else { output += "\n\n\(String(repeating: "#", count: Int(tag.name.dropFirst()) ?? 1)) " }
+                default:
+                    if blockTags.contains(tag.name) { output += "\n\n" }
+                }
+                if tag.isSelfClosing && !voidTags.contains(tag.name) {
+                    output += inlineMarker(for: tag, links: &links)
+                }
+            }
+            append(output, sourceLine: sourceLine, to: &builder)
+            builder.append("\n", sourceLine: sourceLine)
+            index += 1
+        }
+
+        let fallbackSource = sourceLines.last ?? 0
+        builder.finish(sourceLine: fallbackSource)
+        return Output(lines: builder.lines, sourceLines: builder.sourceLines, htmlTables: htmlTables)
+    }
+
+    private static func append(_ text: String, sourceLine: Int, to builder: inout Builder) {
+        builder.append(text, sourceLine: sourceLine)
+    }
+
+    private static func appendTable(_ table: TableState, to builder: inout Builder) {
+        guard let headers = table.rows.first, !headers.isEmpty else { return }
+        builder.append("\n\n", sourceLine: table.sourceLine)
+        builder.flush(sourceLine: table.sourceLine)
+        let headerCells = headers.map { escapePipe(HTMLImageSyntax.decodeEntities($0.text)) }
+        let separator = headers.map { cell in
+            switch cell.alignment {
+            case "center": return ":---:"
+            case "right": return "---:"
+            default: return "---"
+            }
+        }
+        builder.append("| " + headerCells.joined(separator: " | ") + " |\n", sourceLine: table.sourceLine)
+        builder.append("| " + separator.joined(separator: " | ") + " |\n", sourceLine: table.sourceLine)
+        for row in table.rows.dropFirst() {
+            let cells = row.map { escapePipe(HTMLImageSyntax.decodeEntities($0.text)) }
+            builder.append("| " + cells.joined(separator: " | ") + " |\n", sourceLine: table.sourceLine)
+        }
+        builder.append("\n", sourceLine: table.sourceLine)
+    }
+
+    private static func escapePipe(_ text: String) -> String {
+        text.replacingOccurrences(of: "|", with: "\\|")
+    }
+
+    private static func htmlTableImage(_ attributes: [String: String]) -> HTMLTableImage? {
+        guard let source = attributes["src"], !source.isEmpty else { return nil }
+        return HTMLTableImage(url: HTMLImageSyntax.decodeEntities(source),
+                              alt: HTMLImageSyntax.decodeEntities(attributes["alt"] ?? ""),
+                              width: attributes["width"].flatMap(HTMLImageSyntax.width(from:)))
+    }
+
+    private static func tableAlignment(_ value: String?) -> HTMLTableAlignment {
+        switch value {
+        case "center": return .center
+        case "right": return .trailing
+        default: return .leading
+        }
+    }
+
+    private static func inlineMarker(for tag: Tag, links: inout [String?]) -> String {
+        switch tag.name {
+        case "b", "strong": return "**"
+        case "i", "em": return "*"
+        case "s", "strike", "del": return "~~"
+        case "code": return "`"
+        case "a":
+            if tag.isClosing {
+                guard let destination = links.popLast() ?? nil else { return "" }
+                return "](<\(markdownDestination(destination))>)"
+            }
+            let destination = tag.attributes["href"].map(HTMLImageSyntax.decodeEntities)
+            links.append(destination)
+            return destination == nil ? "" : "["
+        default: return ""
+        }
+    }
+
+    private static func markdownDestination(_ raw: String) -> String {
+        HTMLImageSyntax.decodeEntities(raw)
+            .replacingOccurrences(of: ">", with: "%3E")
+    }
+
+    private static func parseTag(_ characters: [Character], at start: Int) -> Tag? {
+        var index = start + 1
+        guard index < characters.count else { return nil }
+        let isClosing = characters[index] == "/"
+        if isClosing { index += 1 }
+        let nameStart = index
+        while index < characters.count,
+              characters[index].isASCII,
+              (characters[index].isLetter || characters[index].isNumber || characters[index] == "-") {
+            index += 1
+        }
+        guard index > nameStart else { return nil }
+        let name = String(characters[nameStart..<index]).lowercased()
+        var attributes: [String: String] = [:]
+        var isSelfClosing = false
+
+        while index < characters.count {
+            while index < characters.count && characters[index].isWhitespace { index += 1 }
+            guard index < characters.count else { return nil }
+            if characters[index] == ">" {
+                return Tag(name: name, isClosing: isClosing, isSelfClosing: isSelfClosing,
+                           attributes: attributes, end: index + 1)
+            }
+            if characters[index] == "/", index + 1 < characters.count, characters[index + 1] == ">" {
+                isSelfClosing = true
+                return Tag(name: name, isClosing: isClosing, isSelfClosing: true,
+                           attributes: attributes, end: index + 2)
+            }
+            let keyStart = index
+            while index < characters.count,
+                  characters[index].isASCII,
+                  (characters[index].isLetter || characters[index].isNumber
+                    || "_:-.".contains(characters[index])) {
+                index += 1
+            }
+            guard index > keyStart else { return nil }
+            let key = String(characters[keyStart..<index]).lowercased()
+            while index < characters.count && characters[index].isWhitespace { index += 1 }
+            var value = ""
+            if index < characters.count, characters[index] == "=" {
+                index += 1
+                while index < characters.count && characters[index].isWhitespace { index += 1 }
+                guard index < characters.count else { return nil }
+                let quote = characters[index] == "'" || characters[index] == "\"" ? characters[index] : nil
+                if let quote {
+                    index += 1
+                    let valueStart = index
+                    while index < characters.count && characters[index] != quote { index += 1 }
+                    guard index < characters.count else { return nil }
+                    value = String(characters[valueStart..<index])
+                    index += 1
+                } else {
+                    let valueStart = index
+                    while index < characters.count && !characters[index].isWhitespace && characters[index] != ">" { index += 1 }
+                    value = String(characters[valueStart..<index])
+                }
+            }
+            if attributes[key] == nil { attributes[key] = value }
+        }
+        return nil
+    }
+
+    private static func fenceOpening(_ line: String) -> (character: Character, length: Int)? {
+        let text = line.drop(while: { $0 == " " || $0 == "\t" })
+        guard let character = text.first, character == "`" || character == "~" else { return nil }
+        let length = text.prefix(while: { $0 == character }).count
+        return length >= 3 ? (character, length) : nil
+    }
+
+    private static func closesFence(_ line: String, opening: (character: Character, length: Int)) -> Bool {
+        let text = line.drop(while: { $0 == " " || $0 == "\t" })
+        return text.prefix(while: { $0 == opening.character }).count >= opening.length
+    }
+}

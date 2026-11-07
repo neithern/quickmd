@@ -17,7 +17,7 @@ enum SelectionRows {
     /// cells, its selectable string is `TableTextBuilder`'s.
     static func isAtomic(_ block: MarkdownBlock) -> Bool {
         switch block.content {
-        case .image, .svgImage, .mathBlock, .mermaidDiagram: return true
+        case .image, .htmlTable, .svgImage, .mathBlock, .mermaidDiagram: return true
         case .text, .codeBlock, .blockquote, .alert, .heading, .table: return false
         }
     }
@@ -70,6 +70,14 @@ enum SelectionRows {
             return tablePiece(built, covered: covered)
         case .image(_, let alt, _):
             return selection.range(inRow: row, rowLength: 1) == nil ? nil : .image(alt: alt)
+        case .htmlTable(let rows):
+            guard selection.range(inRow: row, rowLength: 1) != nil else { return nil }
+            let text = rows.map { cells in
+                cells.map { cell in
+                    ([cell.text] + cell.images.map(\.alt)).filter { !$0.isEmpty }.joined(separator: " ")
+                }.joined(separator: "\t")
+            }.joined(separator: "\n")
+            return .text(NSAttributedString(string: text))
         case .svgImage:
             return selection.range(inRow: row, rowLength: 1) == nil ? nil : .image(alt: "")
         case .mathBlock(let latex):
@@ -227,7 +235,7 @@ enum SelectionRows {
                 guard let built = table(block) else { return nil }
                 string = built.string
                 layout = built.layout
-            case .image, .svgImage, .mathBlock, .mermaidDiagram:
+            case .htmlTable, .image, .svgImage, .mathBlock, .mermaidDiagram:
                 return nil
             }
             guard let range = selection.range(inRow: row, rowLength: string.length) else { continue }

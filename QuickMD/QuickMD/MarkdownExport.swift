@@ -384,6 +384,7 @@ struct PrintableImageView: View {
     /// HTML `<img width>`; replaces the image's own width in the D4 rule.
     var width: ImageWidth? = nil
     var documentURL: URL? = nil
+    var showsCaption = true
 
     /// Page column cap. The D4 rule applies as on screen: an image is never
     /// drawn wider than its own width, so icons stay icon-sized.
@@ -412,7 +413,7 @@ struct PrintableImageView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 4))
             }
 
-            if !alt.isEmpty {
+            if showsCaption && !alt.isEmpty {
                 Text(alt)
                     .font(.system(size: 10))
                     .foregroundColor(Color(white: 0.5))
@@ -445,6 +446,75 @@ struct PrintableImageView: View {
     }
 }
 
+
+struct PrintableHTMLTableView: View {
+    let rows: [[HTMLTableCell]]
+    let documentURL: URL?
+
+    private let renderer = MarkdownRenderer(colorScheme: .light)
+    private let theme = MarkdownTheme.exportTheme(for: .light)
+    private let maxWidth: CGFloat = 600
+    private let cellPadding: CGFloat = 8
+
+    var body: some View {
+        let columnCount = max(rows.map(\.count).max() ?? 1, 1)
+        let cellWidth = maxWidth / CGFloat(columnCount)
+        VStack(spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
+                        cellView(cell, width: cellWidth)
+                    }
+                }
+                Rectangle().fill(theme.borderColor).frame(height: 1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.borderColor, lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private func cellView(_ cell: HTMLTableCell, width: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if !cell.text.isEmpty {
+                Text(cellText(cell))
+                    .multilineTextAlignment(textAlignment(cell.alignment))
+                    .frame(maxWidth: .infinity, alignment: frameAlignment(cell.alignment))
+            }
+            ForEach(Array(cell.images.enumerated()), id: \.offset) { _, image in
+                PrintableImageView(url: image.url, alt: image.alt, width: image.width,
+                                   documentURL: documentURL, showsCaption: false)
+                    .frame(maxWidth: .infinity, alignment: frameAlignment(cell.alignment))
+            }
+        }
+        .padding(cellPadding)
+        .frame(width: width, alignment: frameAlignment(cell.alignment))
+        .overlay(Rectangle().stroke(theme.borderColor, lineWidth: 0.5))
+        .background(cell.isHeader ? theme.headerBackgroundColor : Color.white)
+    }
+
+    private func cellText(_ cell: HTMLTableCell) -> AttributedString {
+        var text = renderer.renderInline(cell.text)
+        if cell.isHeader { text.setDualFont(size: 14, bold: true, fonts: theme.fonts) }
+        return text
+    }
+
+    private func textAlignment(_ alignment: HTMLTableAlignment) -> TextAlignment {
+        switch alignment {
+        case .leading: return .leading
+        case .center: return .center
+        case .trailing: return .trailing
+        }
+    }
+
+    private func frameAlignment(_ alignment: HTMLTableAlignment) -> Alignment {
+        switch alignment {
+        case .leading: return .leading
+        case .center: return .center
+        case .trailing: return .trailing
+        }
+    }
+}
 /// Once per folder per session: `restoreAccess` starts a security-scoped
 /// access each time it succeeds, and `PrintableImageView.body` runs twice per
 /// image per export — the memo keeps that to one start per folder.
@@ -484,6 +554,9 @@ struct MarkdownPrintableBlockView: View {
 
             case .table(let headers, let rows, let alignments, let style):
                 PrintableTableView(headers: headers, rows: rows, alignments: alignments, style: style)
+
+            case .htmlTable(let rows):
+                PrintableHTMLTableView(rows: rows, documentURL: documentURL)
 
             case .codeBlock(let code, let language):
                 PrintableCodeBlockView(code: code, language: language)

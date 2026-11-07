@@ -248,11 +248,10 @@ final class HTMLImageTests: XCTestCase {
                        ["Build status badge"])
     }
 
-    func testOtherHTMLStaysLiteralText() {
-        for line in ["<span>x</span>", "<details>", "<summary>More</summary>", "<p>Some text</p>",
-                     "<div>text</div>", "</img>", "<img src=\"a.png\"> caption", "<img src=a.png>text",
-                     "<!-- comment -->", "<p", "<>", "< img src=a.png>", "<imgsrc=a.png>",
-                     "<img src=\"a.png\" alt=\"x\" <b>", "<table>", "</br>", "<p align=center>![a](x.png)</p>"] {
+    func testUnsupportedOrMalformedHTMLStaysLiteralText() {
+        for line in ["<details>", "<summary>More</summary>", "</img>", "<!-- comment -->",
+                     "<p", "<>", "< img src=a.png>", "<imgsrc=a.png>",
+                     "<img src=\"a.png\" alt=\"x\" <b>", "</br>"] {
             let blocks = parse(line)
             XCTAssertTrue(images(blocks).isEmpty, line)
             XCTAssertEqual(kinds(blocks), ["text"], line)
@@ -260,10 +259,108 @@ final class HTMLImageTests: XCTestCase {
         }
     }
 
-    func testInlineImgInsideParagraphStaysText() {
+    func testInlineHTMLFormattingAndLinks() {
+        let blocks = parse(#"<p>hello <strong>bold</strong> <em>italic</em> <a href="https://example.com">site</a></p>"#)
+        XCTAssertEqual(kinds(blocks), ["text"])
+        XCTAssertEqual(plainText(blocks[0]), "hello bold italic site")
+        XCTAssertTrue(hasBoldRun(blocks[0]))
+        guard case .text(let attributed) = blocks[0].content else { return XCTFail("Expected text") }
+        XCTAssertTrue(attributed.runs.contains { $0.link?.absoluteString == "https://example.com" })
+    }
+
+    func testHTMLBlocksTablesListsAndMath() {
+        let blocks = parse("""
+        <h2>Section</h2>
+        <ul><li>one</li><li>two</li></ul>
+        <table><tr><th>Name</th><th align="right">Count</th></tr><tr><td>Alpha</td><td>2</td></tr></table>
+        <span class="math">x^2</span>
+        <div class="math">x + y</div>
+        """)
+        XCTAssertTrue(blocks.contains {
+            if case .heading(_, let title, _) = $0.content { return title == "Section" }
+            return false
+        })
+        XCTAssertTrue(allText(blocks).contains("one") && allText(blocks).contains("two"))
+        guard let tableBlock = blocks.first(where: {
+            if case .table = $0.content { return true }
+            return false
+        }), case .table(let headers, let rows, let alignments, _) = tableBlock.content else {
+            return XCTFail("Expected an HTML table")
+        }
+        XCTAssertEqual(headers, ["Name", "Count"])
+        XCTAssertEqual(rows, [["Alpha", "2"]])
+        XCTAssertEqual(alignments, [.leading, .trailing])
+        XCTAssertEqual(tableBlock.sourceLine, 2)
+        guard let displayMath = blocks.first(where: {
+            if case .mathBlock = $0.content { return true }
+            return false
+        }), case .mathBlock(let latex) = displayMath.content else {
+            return XCTFail("Expected display math")
+        }
+        XCTAssertEqual(latex, "x + y")
+        XCTAssertTrue(blocks.compactMap(plainText).contains { $0.contains("$x^2$") })
+    }
+
+    func testMultilineHTMLTable() {
+        let blocks = parse("""
+        <table>
+        <tr><th>Key</th><th>Value</th></tr>
+        <tr><td>one</td><td>1</td></tr>
+        </table>
+        """)
+        XCTAssertEqual(kinds(blocks), ["table"])
+        guard case .table(let headers, let rows, _, _) = blocks[0].content else {
+            return XCTFail("Expected a multiline HTML table")
+        }
+        XCTAssertEqual(headers, ["Key", "Value"])
+        XCTAssertEqual(rows, [["one", "1"]])
+        XCTAssertEqual(blocks[0].sourceLine, 0)
+    }
+
+    func testReadmeHTMLTablesPreserveImageGrid() throws {
+        let repository = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let markdown = try String(contentsOf: repository.appendingPathComponent("README.md"), encoding: .utf8)
+        let blocks = parse(markdown)
+        let imageTables = blocks.compactMap { block -> [[HTMLTableCell]]? in
+            guard case .htmlTable(let rows) = block.content else { return nil }
+            return rows
+        }
+        let screenshotImages = imageTables.flatMap { $0 }.flatMap(\.images)
+            .filter { $0.url.contains("QuickMD/Screenshots/") }
+        let imageRows = imageTables.flatMap { $0 }.filter { row in
+            row.contains { !$0.images.isEmpty }
+        }
+
+        XCTAssertEqual(imageTables.count, 2)
+        XCTAssertTrue(imageTables.allSatisfy { $0.allSatisfy { $0.count == 2 } })
+        XCTAssertEqual(imageRows.count, 4)
+        XCTAssertTrue(imageRows.allSatisfy { $0.allSatisfy { $0.images.count == 1 } })
+        XCTAssertEqual(screenshotImages.count, 8)
+        XCTAssertEqual(screenshotImages.map(\.width), Array(repeating: .points(400), count: 7) + [.points(188)])
+    }
+
+    func testRawSVGUsesExistingSVGBlock() {
+        let blocks = parse("""
+        Before
+        <svg xmlns="http://www.w3.org/2000/svg">
+          <circle cx="5" cy="5" r="4" />
+        </svg>
+        After
+        """)
+        XCTAssertEqual(kinds(blocks), ["text", "svgImage", "text"])
+        guard case .svgImage(let source) = blocks[1].content else { return XCTFail("Expected SVG block") }
+        XCTAssertTrue(source.contains("<circle"))
+        XCTAssertEqual(blocks[1].sourceLine, 1)
+    }
+
+    func testInlineImgInsideParagraphUsesMarkdownImagePlaceholder() {
         let blocks = parse("Look at this <img src=\"a.png\"> picture.")
         XCTAssertTrue(images(blocks).isEmpty)
-        XCTAssertEqual(plainText(blocks[0]), "Look at this <img src=\"a.png\"> picture.")
+        XCTAssertFalse(plainText(blocks[0])?.contains("<img") ?? true)
+        XCTAssertTrue(plainText(blocks[0])?.contains("[Image]") ?? false)
     }
 
     func testMarkdownAndHTMLImagesAreNotMixedOnOneLine() {

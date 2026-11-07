@@ -21,6 +21,7 @@ struct ImageBlockView: View {
     let documentURL: URL?
     let fontScale: CGFloat
     let contentWidth: CGFloat
+    var showsCaption = true
     /// Where the image's size goes once it is known, so every later measure
     /// computes this row instead of starting it at the loading view.
     let heightCache: BlockHeightCache?
@@ -42,6 +43,7 @@ struct ImageBlockView: View {
 
     init(url: String, alt: String, width: ImageWidth? = nil, theme: MarkdownTheme, documentURL: URL?,
          fontScale: CGFloat, contentWidth: CGFloat, heightCache: BlockHeightCache? = nil,
+            showsCaption: Bool = true,
          onEnlarge: @escaping (GraphicPreview) -> Void = { _ in }) {
         self.url = url
         self.alt = alt
@@ -51,6 +53,7 @@ struct ImageBlockView: View {
         self.fontScale = fontScale
         self.contentWidth = contentWidth
         self.heightCache = heightCache
+        self.showsCaption = showsCaption
         self.onEnlarge = onEnlarge
         let source = ImageSource.resolve(url, documentURL: documentURL)
         self.source = source
@@ -96,7 +99,7 @@ struct ImageBlockView: View {
             await loadImage()
         }
 
-        if !alt.isEmpty {
+        if showsCaption && !alt.isEmpty {
             ImageCaption(alt: alt, color: theme.secondaryTextColor, fontScale: fontScale,
                          contentWidth: contentWidth)
         }

@@ -157,6 +157,10 @@ struct MarkdownBlockParser: Sendable {
             }
         }
 
+        let convertedHTML = HTMLMarkdownConverter.convert(lines: lines, sourceLines: lineMap)
+        lines = convertedHTML.lines
+        lineMap = convertedHTML.sourceLines
+
         // Use reference-aware renderer if definitions were found
         let activeRenderer = referenceDefinitions.isEmpty && footnoteDefinitions.isEmpty
             ? self.renderer
@@ -191,6 +195,14 @@ struct MarkdownBlockParser: Sendable {
 
             // What every block marker below is looked for in (`markerLine`).
             let trimmedLine = Self.markerLine(line)
+
+            if let rows = convertedHTML.htmlTables[line] {
+                flushTextBuffer(&textBuffer, to: &blocks, index: &blockIndex, pending: &pendingRows)
+                blocks.append(.htmlTable(index: blockIndex, rows: rows, sourceLine: sourceLine))
+                blockIndex += 1
+                i += 1
+                continue
+            }
 
             // Fenced code block — check BEFORE math to protect $$ inside code blocks
             if let opening = Self.fenceOpening(trimmedLine) {

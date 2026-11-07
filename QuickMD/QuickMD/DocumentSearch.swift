@@ -245,6 +245,8 @@ enum DocumentSearch {
                 let count = searchMatchRanges(in: string, term: term).count
                 matches.append(contentsOf: repeatElement(block.id, count: count))
                 continue
+            case .htmlTable(let rows):
+                segments = rows.flatMap { $0 }.map(\.text).filter { !$0.isEmpty }
             case .codeBlock(let code, _):
                 segments = [code]
             case .image(_, let alt, _):
@@ -317,7 +319,7 @@ enum DocumentSearch {
             // here exactly as `HeadingBlockView` renders it.
             if let shown = converted[block.id] { return shown.string }
             return String(renderer.renderHeader(title, level: level).characters)
-        case .table, .codeBlock, .image, .svgImage, .mathBlock, .mermaidDiagram:
+        case .table, .htmlTable, .codeBlock, .image, .svgImage, .mathBlock, .mermaidDiagram:
             return nil
         }
     }

@@ -1365,6 +1365,37 @@ enum BlockHeightMeasurer {
                                + 2 * BlockLayout.Document.tableOuterVerticalPadding)
                 kinds.append(.exact)
 
+            case .htmlTable(let rows):
+                let columnCount = max(rows.map(\.count).max() ?? 1, 1)
+                let columnWidth = max((textWidth - CGFloat(columnCount - 1)) / CGFloat(columnCount), 1)
+                let cellWidth = max(columnWidth - 16, 1)
+                let rowHeights = rows.map { row in
+                    row.map { cell -> CGFloat in
+                        let textHeight: CGFloat
+                        if cell.text.isEmpty {
+                            textHeight = 0
+                        } else {
+                            let attributed = renderer.renderInline(cell.text)
+                            let text = BlockTextConverter.makeNSAttributedString(
+                                from: attributed, hasInlineMath: false,
+                                theme: theme, fontScale: fontScale, math: engine)
+                            textHeight = Self.exactHeight(text: text, width: cellWidth)
+                        }
+                        let imageHeight = cell.images.reduce(CGFloat.zero) { total, image in
+                            let picture = imageSizes[image.url as NSString].map {
+                                BlockLayout.ImageBlock.pictureSize(imageSize: $0, htmlWidth: image.width,
+                                                                   fontScale: fontScale, contentWidth: cellWidth).height
+                            } ?? BlockLayout.ImageBlock.placeholderHeight
+                            return total + picture
+                        }
+                        return textHeight + imageHeight
+                    }.max() ?? BlockLayout.singleLineHeight(for: theme.fonts.appKit(size: 14 * fontScale))
+                }
+                let separators = CGFloat(max(rows.count - 1, 0))
+                heights.append(rowHeights.reduce(0, +) + CGFloat(rows.count) * 16 + separators
+                               + 2 * BlockLayout.Document.tableOuterVerticalPadding)
+                kinds.append(.reported)
+
             case .mathBlock(let latex):
                 if let math {
                     heights.append(math.displayHeight(latex, theme, fontScale) + mathChrome)
@@ -1466,7 +1497,7 @@ enum BlockHeightMeasurer {
             }
         case .alert: pad = Document.alertOuterVerticalPadding
         case .codeBlock: pad = Document.codeOuterVerticalPadding
-        case .table:
+        case .table, .htmlTable:
             pad = Document.tableOuterVerticalPadding
         case .mathBlock: pad = Document.mathOuterVerticalPadding + BlockLayout.Math.verticalPadding
         case .mermaidDiagram:

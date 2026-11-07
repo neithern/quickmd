@@ -1170,6 +1170,12 @@ struct MarkdownView: View {
                                    onLink: { handleLinkActivation($0) })
                     .padding(.vertical, Metrics.tableOuterVerticalPadding)
 
+            case .htmlTable(let rows):
+                HTMLTableBlockView(rows: rows, theme: theme, documentURL: documentURL,
+                                   fontScale: scale, contentWidth: contentWidth, heightCache: heightCache,
+                                   onEnlarge: presentGraphicPreview)
+                    .padding(.vertical, Metrics.tableOuterVerticalPadding)
+
             case .codeBlock(let code, let language):
                 // The copy button's toast belongs to THIS tab: a closure, not a
                 // notification every open document would observe.
@@ -1325,7 +1331,7 @@ struct MarkdownView: View {
                 hasInlineMath: false, theme: theme, fontScale: scale)
         case .table:
             return selectableTable(for: block, installedVersion: installedVersion)?.string
-        case .image, .svgImage, .mathBlock, .mermaidDiagram:
+        case .htmlTable, .image, .svgImage, .mathBlock, .mermaidDiagram:
             return nil
         }
     }

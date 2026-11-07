@@ -71,6 +71,25 @@ enum ImageWidth: Sendable, Equatable {
     }
 }
 
+enum HTMLTableAlignment: Sendable {
+    case leading
+    case center
+    case trailing
+}
+
+struct HTMLTableImage: Sendable, Equatable {
+    let url: String
+    let alt: String
+    let width: ImageWidth?
+}
+
+struct HTMLTableCell: Sendable {
+    let text: String
+    let alignment: HTMLTableAlignment
+    let isHeader: Bool
+    let images: [HTMLTableImage]
+}
+
 // MARK: - Table Style
 
 /// How a `.table` block is drawn. Every Markdown table is `.grid`; YAML front
@@ -167,6 +186,11 @@ struct MarkdownBlock: Identifiable, Sendable {
             return "t|" + head(String(attributed.characters))
         case .table(let headers, let rows, _, _):
             return "b|\(rows.count)|" + head((headers + (rows.first ?? [])).joined(separator: "\u{1F}"))
+        case .htmlTable(let rows):
+            let content = rows.flatMap { $0 }.map { cell in
+                cell.text + cell.images.map(\.url).joined(separator: "\u{1F}")
+            }.joined(separator: "\u{1E}")
+            return "hb|\(rows.count)|" + head(content)
         case .codeBlock(let code, let language):
             return "c|\(language)|" + head(code)
         case .image(let url, let alt, _):
@@ -190,6 +214,7 @@ struct MarkdownBlock: Identifiable, Sendable {
         case text(AttributedString)
         /// `.properties` (front matter): `headers` empty, every row `[key, value]`.
         case table(headers: [String], rows: [[String]], alignments: [TextAlignment], style: TableStyle)
+        case htmlTable(rows: [[HTMLTableCell]])
         case codeBlock(code: String, language: String)
         /// `width` comes from an HTML `<img width>` (nil for Markdown images,
         /// which have no width syntax): it replaces the image's own width in
@@ -231,6 +256,9 @@ struct MarkdownBlock: Identifiable, Sendable {
         MarkdownBlock(id: "table-\(index)",
                       content: .table(headers: headers, rows: rows, alignments: alignments, style: style),
                       sourceLine: sourceLine, isFrontMatter: isFrontMatter)
+    }
+    static func htmlTable(index: Int, rows: [[HTMLTableCell]], sourceLine: Int) -> MarkdownBlock {
+        MarkdownBlock(id: "html-table-\(index)", content: .htmlTable(rows: rows), sourceLine: sourceLine)
     }
     static func codeBlock(index: Int, code: String, language: String, sourceLine: Int,
                           isFrontMatter: Bool = false) -> MarkdownBlock {
