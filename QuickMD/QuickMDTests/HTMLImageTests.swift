@@ -249,7 +249,7 @@ final class HTMLImageTests: XCTestCase {
     }
 
     func testUnsupportedOrMalformedHTMLStaysLiteralText() {
-        for line in ["<details>", "<summary>More</summary>", "</img>", "<!-- comment -->",
+        for line in ["<details>", "<summary>More</summary>", "</img>",
                      "<p", "<>", "< img src=a.png>", "<imgsrc=a.png>",
                      "<img src=\"a.png\" alt=\"x\" <b>", "</br>"] {
             let blocks = parse(line)
@@ -257,6 +257,30 @@ final class HTMLImageTests: XCTestCase {
             XCTAssertEqual(kinds(blocks), ["text"], line)
             XCTAssertEqual(plainText(blocks[0])?.contains("<"), true, "\(line) must stay literal")
         }
+    }
+
+    func testHTMLCommentsAreHiddenAndContentsIgnored() {
+        let blocks = parse("""
+        Before<!-- inline comment -->After
+        <!-- multiline comment
+        <img src="hidden.png">
+        hidden text -->
+        Visible after comment.
+        """)
+        let text = allText(blocks)
+        XCTAssertTrue(text.contains("BeforeAfter"))
+        XCTAssertTrue(text.contains("Visible after comment."))
+        XCTAssertFalse(text.contains("comment"))
+        XCTAssertFalse(text.contains("hidden text"))
+        XCTAssertTrue(images(blocks).isEmpty)
+    }
+
+    func testHTMLCommentsRemainLiteralInsideCodeFences() {
+        let blocks = parse("```html\n<!-- keep this -->\n```")
+        guard case .codeBlock(let code, _) = blocks.first?.content else {
+            return XCTFail("Expected a code block")
+        }
+        XCTAssertEqual(code, "<!-- keep this -->")
     }
 
     func testInlineHTMLFormattingAndLinks() {

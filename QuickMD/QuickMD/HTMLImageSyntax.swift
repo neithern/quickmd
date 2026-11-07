@@ -494,37 +494,42 @@ enum HTMLMarkdownConverter {
         var htmlTableIndex = 0
         var fence: (character: Character, length: Int)?
         var inDisplayMath = false
+        var inHTMLComment = false
         var index = 0
 
         while index < lines.count {
             let line = lines[index]
             let sourceLine = index < sourceLines.count ? sourceLines[index] : index
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
 
             if let opening = fence {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
                 builder.append(line, sourceLine: sourceLine)
                 builder.append("\n", sourceLine: sourceLine)
                 if closesFence(trimmed, opening: opening) { fence = nil }
                 index += 1
                 continue
             }
-            if let opening = fenceOpening(trimmed) {
-                fence = opening
-                builder.append(line, sourceLine: sourceLine)
-                builder.append("\n", sourceLine: sourceLine)
-                index += 1
-                continue
-            }
             if inDisplayMath {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
                 builder.append(line, sourceLine: sourceLine)
                 builder.append("\n", sourceLine: sourceLine)
                 if trimmed.contains("$$") { inDisplayMath = false }
                 index += 1
                 continue
             }
+
+            let visibleLine = removingHTMLComments(from: line, inComment: &inHTMLComment)
+            let trimmed = visibleLine.trimmingCharacters(in: .whitespaces)
+            if let opening = fenceOpening(trimmed) {
+                fence = opening
+                builder.append(visibleLine, sourceLine: sourceLine)
+                builder.append("\n", sourceLine: sourceLine)
+                index += 1
+                continue
+            }
             if trimmed.hasPrefix("$$") {
                 inDisplayMath = !trimmed.dropFirst(2).contains("$$")
-                builder.append(line, sourceLine: sourceLine)
+                builder.append(visibleLine, sourceLine: sourceLine)
                 builder.append("\n", sourceLine: sourceLine)
                 index += 1
                 continue
@@ -534,11 +539,11 @@ enum HTMLMarkdownConverter {
             // remain no-ops except for table structure, which this converter
             // must retain until its rows are assembled.
             if table == nil,
-               case .tags(let images, _)? = HTMLImageSyntax.scan(line[...]) {
+               case .tags(let images, _)? = HTMLImageSyntax.scan(visibleLine[...]) {
                 let isTableStructure = ["<table", "</table", "<tr", "</tr", "<td", "</td", "<th", "</th"]
                     .contains { trimmed.lowercased().contains($0) }
                 if !images.isEmpty || !isTableStructure {
-                    builder.append(line, sourceLine: sourceLine)
+                    builder.append(visibleLine, sourceLine: sourceLine)
                     builder.append("\n", sourceLine: sourceLine)
                     index += 1
                     continue
@@ -546,7 +551,7 @@ enum HTMLMarkdownConverter {
             }
 
             if trimmed.lowercased().hasPrefix("<svg") {
-                var svgLines = [line]
+                var svgLines = [visibleLine]
                 let svgSource = sourceLine
                 let svgStartIndex = index
                 while !svgLines.joined(separator: "\n").lowercased().contains("</svg>") && index + 1 < lines.count {
@@ -573,7 +578,7 @@ enum HTMLMarkdownConverter {
                 continue
             }
 
-            let characters = Array(line)
+            let characters = Array(visibleLine)
             var output = ""
             var position = 0
             while position < characters.count {
@@ -779,6 +784,26 @@ enum HTMLMarkdownConverter {
 
     private static func append(_ text: String, sourceLine: Int, to builder: inout Builder) {
         builder.append(text, sourceLine: sourceLine)
+    }
+
+    private static func removingHTMLComments(from line: String, inComment: inout Bool) -> String {
+        var result = ""
+        var cursor = line.startIndex
+        while cursor < line.endIndex {
+            if inComment {
+                guard let close = line.range(of: "-->", range: cursor..<line.endIndex) else { break }
+                cursor = close.upperBound
+                inComment = false
+            } else if let open = line.range(of: "<!--", range: cursor..<line.endIndex) {
+                result += line[cursor..<open.lowerBound]
+                cursor = open.upperBound
+                inComment = true
+            } else {
+                result += line[cursor...]
+                break
+            }
+        }
+        return result
     }
 
     private static func appendTable(_ table: TableState, to builder: inout Builder) {
