@@ -249,48 +249,15 @@ final class HTMLImageTests: XCTestCase {
     }
 
     func testOtherHTMLStaysLiteralText() {
-        for line in ["</img>", "<img src=\"a.png\"> caption", "<img src=a.png>text",
-                     "<p", "<>", "< img src=a.png>", "<imgsrc=a.png>",
-                     "<img src=\"a.png\" alt=\"x\" <b>", "</br>"] {
+        for line in ["<span>x</span>", "<details>", "<summary>More</summary>", "<p>Some text</p>",
+                     "<div>text</div>", "</img>", "<img src=\"a.png\"> caption", "<img src=a.png>text",
+                     "<!-- comment -->", "<p", "<>", "< img src=a.png>", "<imgsrc=a.png>",
+                     "<img src=\"a.png\" alt=\"x\" <b>", "<table>", "</br>", "<p align=center>![a](x.png)</p>"] {
             let blocks = parse(line)
             XCTAssertTrue(images(blocks).isEmpty, line)
             XCTAssertEqual(kinds(blocks), ["text"], line)
             XCTAssertEqual(plainText(blocks[0])?.contains("<"), true, "\(line) must stay literal")
         }
-        XCTAssertTrue(parse("<table>").isEmpty, "a table wrapper alone is a no-op")
-        XCTAssertTrue(parse("<details>").isEmpty, "a block container alone is a no-op")
-        XCTAssertEqual(parse("<!-- comment -->").compactMap(plainText).joined(), "",
-                       "an HTML comment renders nothing")
-    }
-
-    func testPureTextBlockTagsRenderTheirText() {
-        XCTAssertEqual(plainText(parse("<p>Some text</p>")[0]), "Some text")
-        XCTAssertEqual(plainText(parse("<div>text</div>")[0]), "text")
-        XCTAssertEqual(plainText(parse("<summary>More</summary>")[0]), "More")
-        XCTAssertEqual(plainText(parse("<caption>Cap</caption>")[0]), "Cap")
-        XCTAssertEqual(plainText(parse("<td align=\"center\"><em>Cap</em></td>")[0]), "Cap")
-        XCTAssertEqual(plainText(parse("<span>x</span>")[0]), "x")
-        XCTAssertEqual(plainText(parse("<p align=\"center\"><span>x</span> <b>y</b></p>")[0]),
-                       "x y")
-        XCTAssertEqual(plainText(parse("<p align=center>![a](x.png)</p>")[0]), "[Image: a]")
-    }
-
-    func testHTMLHeadingTagsBecomeHeadingBlocks() {
-        let single = parse("<h1>Title</h1>")
-        XCTAssertEqual(kinds(single), ["heading"])
-        guard case .heading(let level, let title, _)? = single.first?.content else {
-            return XCTFail("expected a heading block")
-        }
-        XCTAssertEqual(level, 1)
-        XCTAssertEqual(title, "Title")
-
-        let multi = parse("<h2 align=\"center\">\nSub\n</h2>")
-        XCTAssertEqual(kinds(multi), ["heading"])
-        guard case .heading(let multiLevel, let multiTitle, _)? = multi.first?.content else {
-            return XCTFail("expected a multi-line heading block")
-        }
-        XCTAssertEqual(multiLevel, 2)
-        XCTAssertEqual(multiTitle, "Sub")
     }
 
     func testInlineImgInsideParagraphStaysText() {
@@ -450,62 +417,5 @@ final class HTMLImageTests: XCTestCase {
         let start = Date()
         XCTAssertNil(HTMLImageSyntax.scan(line[...]))
         XCTAssertLessThan(Date().timeIntervalSince(start), 2.0)
-    }
-
-    // MARK: - HTML tables
-
-    func testHTMLTableBecomesTableBlock() {
-        let md = """
-        <table>
-        <tr><th>Name</th><th align="right">Value</th></tr>
-        <tr><td>Alpha</td><td>1</td></tr>
-        <tr><td>Beta <em>two</em></td><td>2</td></tr>
-        </table>
-        """
-        let blocks = parse(md)
-        XCTAssertEqual(kinds(blocks), ["table"])
-        guard case .table(let headers, let rows, let alignments, let style)? = blocks.first?.content else {
-            return XCTFail("expected a table block")
-        }
-        XCTAssertEqual(headers, ["Name", "Value"])
-        XCTAssertEqual(rows, [["Alpha", "1"], ["Beta <em>two</em>", "2"]])
-        XCTAssertEqual(alignments, [.leading, .trailing])
-        XCTAssertEqual(style, .grid)
-    }
-
-    func testHTMLTableWithoutHeadersKeepsCellsAndAlignment() {
-        let md = """
-        <table>
-        <tr><td>A&amp;B</td><td align="center">2</td></tr>
-        </table>
-        """
-        guard case .table(let headers, let rows, let alignments, _)? = parse(md).first?.content else {
-            return XCTFail("expected a table block")
-        }
-        XCTAssertEqual(headers, ["", ""])
-        XCTAssertEqual(rows, [["A&amp;B", "2"]])
-        XCTAssertEqual(alignments, [.leading, .center])
-    }
-
-    func testHTMLTableWithImageKeepsImageBlocks() {
-        let md = """
-        <table>
-        <tr><td><img src="a.png" alt="A"></td></tr>
-        </table>
-        """
-        XCTAssertEqual(kinds(parse(md)), ["image"])
-        XCTAssertEqual(images(parse(md)).map(\.url), ["a.png"])
-    }
-
-    func testHTMLTableCaptionBecomesTextBeforeTable() {
-        let md = """
-        <table>
-        <caption>My <em>table</em></caption>
-        <tr><td>A</td></tr>
-        </table>
-        """
-        let blocks = parse(md)
-        XCTAssertEqual(kinds(blocks), ["text", "table"])
-        XCTAssertEqual(plainText(blocks[0]), "My table")
     }
 }

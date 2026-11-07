@@ -192,13 +192,6 @@ struct MarkdownBlockParser: Sendable {
             // What every block marker below is looked for in (`markerLine`).
             let trimmedLine = Self.markerLine(line)
 
-            // A line made only of HTML comments is layout, not content: skip it
-            // like a wrapper-only line, without splitting a paragraph.
-            if Self.isCommentOnlyLine(line) {
-                i += 1
-                continue
-            }
-
             // Fenced code block — check BEFORE math to protect $$ inside code blocks
             if let opening = Self.fenceOpening(trimmedLine) {
                 flushTextBuffer(&textBuffer, to: &blocks, index: &blockIndex, pending: &pendingRows)
@@ -330,45 +323,6 @@ struct MarkdownBlockParser: Sendable {
                 continue
             }
 
-            // HTML table (lightweight subset): a table made only of text is
-            // turned into the same `.table` block a pipe table produces, so
-            // measurement, selection, search and PDF are unchanged. Tables
-            // with `<img>` (or another unsupported construct) return nil and
-            // fall through to the line-based HTML handling below.
-            if let htmlTable = HTMLTableSyntax.scan(lines, from: i) {
-                flushTextBuffer(&textBuffer, to: &blocks, index: &blockIndex, pending: &pendingRows)
-                var headers = htmlTable.headers
-                var tableRows = htmlTable.rows
-                if !referenceDefinitions.isEmpty || !footnoteDefinitions.isEmpty {
-                    let ids = footnoteDefinitions.map(\.id)
-                    headers = headers.map {
-                        ReferenceLinks.inlined($0, definitions: referenceDefinitions, footnoteIds: ids)
-                    }
-                    tableRows = tableRows.map { row in
-                        row.map { ReferenceLinks.inlined($0, definitions: referenceDefinitions, footnoteIds: ids) }
-                    }
-                }
-                let alignments: [TextAlignment] = htmlTable.alignments.map {
-                    switch $0 {
-                    case .leading: return .leading
-                    case .center: return .center
-                    case .trailing: return .trailing
-                    }
-                }
-                // A table caption is a text block just above the table; the
-                // table itself has no caption field in MarkdownBlock.
-                if let caption = htmlTable.caption {
-                    blocks.append(.text(index: blockIndex, activeRenderer.render(caption),
-                                        sourceLine: sourceLine))
-                    blockIndex += 1
-                }
-                blocks.append(.table(index: blockIndex, headers: headers, rows: tableRows,
-                                     alignments: alignments, style: .grid, sourceLine: sourceLine))
-                blockIndex += 1
-                i = htmlTable.endIndex
-                continue
-            }
-
             // HTML image line (T-C): nothing but `<img>` tags and layout
             // wrappers (`<p align="center">`, `</p>`, `<a …>`, …), possibly an
             // `<img` tag spread over several lines. Each `<img>` is an
@@ -398,58 +352,6 @@ struct MarkdownBlockParser: Sendable {
                     }
                 }
                 i = html.end
-                continue
-            }
-
-            // Pure-text block tags: <p>, <div>, <caption>, <summary>, <h1>…</h1>,
-            // and similar. Their wrappers are dropped so the text renders as a
-            // normal paragraph (or heading); unknown tags make the line stay
-            // literal. Runs AFTER the HTML image branch, so a line that is a
-            // picture remains one.
-            if let block = HTMLBlockText.unwrap(line) {
-                if let level = block.headingLevel {
-                    let closeOnLine = HTMLBlockText.closingHeadingRange(in: line, level: level) != nil
-                    if !closeOnLine,
-                       let heading = Self.htmlHeadingBlock(lines: lines, from: i, level: level) {
-                        // A title may start on the opening line and finish on
-                        // the closing one (`<h1>Title` … `more</h1>`).
-                        let title = block.text.isEmpty ? heading.title
-                            : block.text + " " + heading.title
-                        flushTextBuffer(&textBuffer, to: &blocks, index: &blockIndex, pending: &pendingRows)
-                        blocks.append(.heading(index: blockIndex, level: level,
-                                               title: ReferenceLinks.inlinedHeading(
-                                                   title,
-                                                   definitions: referenceDefinitions,
-                                                   footnoteIds: footnoteDefinitions.map(\.id)),
-                                               sourceLine: sourceLine))
-                        blockIndex += 1
-                        i = heading.end
-                        continue
-                    }
-                    guard !block.text.isEmpty else {
-                        // A lone opening tag with no close: a wrapper, like <p>.
-                        i += 1
-                        continue
-                    }
-                    flushTextBuffer(&textBuffer, to: &blocks, index: &blockIndex, pending: &pendingRows)
-                    blocks.append(.heading(index: blockIndex, level: level,
-                                           title: ReferenceLinks.inlinedHeading(
-                                               block.text,
-                                               definitions: referenceDefinitions,
-                                               footnoteIds: footnoteDefinitions.map(\.id)),
-                                           sourceLine: sourceLine))
-                    blockIndex += 1
-                    i += 1
-                    continue
-                }
-                if !block.text.isEmpty {
-                    // A block tag is a paragraph of its own, even without blank
-                    // lines around it (`<p>a</p><p>b</p>` in source lines).
-                    flushTextBuffer(&textBuffer, to: &blocks, index: &blockIndex, pending: &pendingRows)
-                    textBuffer.append((line: block.text, originalIndex: lineMap[i]))
-                    flushTextBuffer(&textBuffer, to: &blocks, index: &blockIndex, pending: &pendingRows)
-                }
-                i += 1
                 continue
             }
 
@@ -906,50 +808,6 @@ struct MarkdownBlockParser: Sendable {
     /// no-break spaces is text, not a separator.
     private static func isBlank(_ line: String) -> Bool {
         MarkdownRenderer.isBlankLine(line)
-    }
-
-    /// A line that is nothing but whitespace and complete HTML comments. Such
-    /// a line is layout (like a wrapper-only line), not a paragraph. Comments
-    /// are scanned per line, as the inline renderer sees them.
-    private static func isCommentOnlyLine(_ line: String) -> Bool {
-        var rest = line[...]
-        var sawComment = false
-        while true {
-            rest = rest.drop(while: { $0 == " " || $0 == "\t" })
-            guard !rest.isEmpty else { return sawComment }
-            guard let end = HTMLTagSyntax.commentEnd(atStartOf: rest) else { return false }
-            sawComment = true
-            rest = rest[end...]
-        }
-    }
-
-    /// The multi-line heading form:
-    ///
-    ///     <h1 align="center">
-    ///     Title
-    ///     </h1>
-    ///
-    /// `index` is the line that held only the opening tag. Joins up to ten
-    /// following lines until `</hN>`; nil when the closing tag is missing (the
-    /// caller then treats the opening line as a wrapper).
-    private static func htmlHeadingBlock(lines: [String], from index: Int, level: Int)
-        -> (title: String, end: Int)? {
-        let limit = min(lines.count, index + 11)
-        var title = ""
-        var i = index + 1
-        while i < limit {
-            let line = lines[i]
-            if let close = HTMLBlockText.closingHeadingRange(in: line, level: level) {
-                title += String(line[..<close.lowerBound])
-                let cleaned = title.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !cleaned.isEmpty else { return nil }
-                return (cleaned, i + 1)
-            }
-            if !title.isEmpty { title += " " }
-            title += line
-            i += 1
-        }
-        return nil
     }
 
     /// No paragraph goes on into the next line from the text buffered so
