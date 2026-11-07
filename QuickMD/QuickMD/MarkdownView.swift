@@ -475,6 +475,7 @@ struct MarkdownView: View {
                     }
                     .transition(.opacity)
                 }
+                DocumentTabNavigationButtons(theme: theme)
                 if documentURL != nil {
                     ReloadDocumentButton(theme: theme) {
                         reloadManually()

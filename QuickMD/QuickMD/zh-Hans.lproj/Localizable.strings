@@ -51,6 +51,8 @@
 "Done editing (Esc)" = "完成编辑 (Esc)";
 "Support" = "支持";
 "Support QuickMD development" = "支持 QuickMD 的开发";
+"Back" = "后退";
+"Forward" = "前进";
 "Copy section" = "拷贝章节";
 "Copy code" = "拷贝代码";
 "Show recent documents (⇧⌘D)" = "显示最近使用的文档 (⇧⌘D)";

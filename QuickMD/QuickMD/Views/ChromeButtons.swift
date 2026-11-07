@@ -360,6 +360,33 @@ struct CopySourceButton: View {
     }
 }
 
+struct DocumentTabNavigationButtons: View {
+    let theme: MarkdownTheme
+    @ObservedObject private var navigation = DocumentTabNavigation.shared
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ChromePill(theme: theme, title: L("Back"),
+                       help: L("Back"),
+                       tint: .secondary.opacity(navigation.canGoBack ? 1 : 0.4),
+                       action: navigation.goBack) {
+                Image(systemName: "chevron.backward")
+                    .font(.system(size: 11))
+            }
+            .disabled(!navigation.canGoBack)
+
+            ChromePill(theme: theme, title: L("Forward"),
+                       help: L("Forward"),
+                       tint: .secondary.opacity(navigation.canGoForward ? 1 : 0.4),
+                       action: navigation.goForward) {
+                Image(systemName: "chevron.forward")
+                    .font(.system(size: 11))
+            }
+            .disabled(!navigation.canGoForward)
+        }
+    }
+}
+
 // MARK: - Reload Button
 
 /// Top-right button: re-read the document from disk (⌘R).
