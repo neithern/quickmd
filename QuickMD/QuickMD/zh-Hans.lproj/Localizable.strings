@@ -11,9 +11,9 @@
 
 /* ===== App 与菜单 ===== */
 "Close" = "关闭";
-"QuickMD Help" = "QuickMD 帮助";
+"QuickMD Help" = "简阅帮助";
 "Visit qmd.app" = "访问 qmd.app";
-"Support QuickMD ☕" = "支持 QuickMD ☕";
+"Support QuickMD ☕" = "支持简阅 ☕";
 "Buy Me a Coffee" = "请我喝杯咖啡";
 "Ko-fi" = "Ko-fi";
 "Tip Jar" = "打赏";
@@ -50,7 +50,7 @@
 "Done" = "完成";
 "Done editing (Esc)" = "完成编辑 (Esc)";
 "Support" = "支持";
-"Support QuickMD development" = "支持 QuickMD 的开发";
+"Support QuickMD development" = "支持简阅 的开发";
 "Back" = "后退";
 "Forward" = "前进";
 "Copy section" = "拷贝章节";
@@ -242,8 +242,8 @@
 "Print…" = "打印…";
 
 /* ===== 打赏 ===== */
-"Support QuickMD" = "支持 QuickMD";
-"QuickMD is free and always will be. If you find it useful, consider leaving a tip!" = "QuickMD 将永远免费。如果它对你有帮助，欢迎打赏！";
+"Support QuickMD" = "支持简阅";
+"QuickMD is free and always will be. If you find it useful, consider leaving a tip!" = "简阅将永远免费。如果它对你有帮助，欢迎打赏！";
 "Loading..." = "正在载入…";
 "Unable to load tip options" = "无法载入打赏选项";
 "Try Again" = "重试";
