@@ -611,6 +611,14 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(links(badge), ["https://ci.example"])
     }
 
+    func testBlockquoteHardBreaksSurviveParsing() {
+        let md = ["> first line  ", "> second line  ", "> third line"].joined(separator: "\n")
+        let blocks = parse(md)
+        guard case .blockquote(let quote, _) = blocks[0].content else { return XCTFail("quote") }
+        let renderer = MarkdownRenderer(theme: MarkdownTheme.cached(for: .light))
+        XCTAssertEqual(String(renderer.renderQuotedBody(quote).characters), "first line\nsecond line\nthird line")
+    }
+
     /// Footnote references in quotes, alerts and table cells drew `[^note]`
     /// literally; they now draw the paragraph's superscript number.
     func testFootnoteReferencesResolveInQuotesAlertsAndTableCells() {

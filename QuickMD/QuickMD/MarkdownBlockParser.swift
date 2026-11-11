@@ -457,7 +457,7 @@ struct MarkdownBlockParser: Sendable {
                 while i < lines.count {
                     // The predicate the branch was entered on (`markerLine`),
                     // so the first line is always taken.
-                    let qLine = Self.markerLine(lines[i])
+                    let qLine = Self.quoteMarkerLine(lines[i])
                     guard qLine.hasPrefix(">") else { break }
 
                     // Count nesting level (number of leading > chars)
@@ -492,7 +492,7 @@ struct MarkdownBlockParser: Sendable {
                     i += 1
 
                     while i < lines.count {
-                        let nextLine = Self.markerLine(lines[i])
+                        let nextLine = Self.quoteMarkerLine(lines[i])
                         guard nextLine.hasPrefix(">") else {
                             // No marker: a lazy continuation of the paragraph
                             // the group ends in (CommonMark), or the quote's end.
@@ -814,6 +814,12 @@ struct MarkdownBlockParser: Sendable {
     /// for one decision once hung the parser (a quote marker after U+00A0).
     static func markerLine(_ line: String) -> String {
         line.trimmingCharacters(in: spacesAndTabs)
+    }
+
+    /// Strips indentation before a blockquote marker without dropping trailing
+    /// spaces, which may be the Markdown hard-break marker.
+    private static func quoteMarkerLine(_ line: String) -> String {
+        String(line.drop(while: { $0 == " " || $0 == "\t" }))
     }
 
     /// CommonMark's blank line (`MarkdownRenderer.isBlankLine`): a line of
