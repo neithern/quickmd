@@ -120,17 +120,18 @@ struct TableText {
     }
 }
 
-/// An `NSTextTable` whose columns fill the available width exactly.
+/// An `NSTextTable` whose columns use their natural content widths when they
+/// fit. If they do not, naturally narrow columns keep their width and wider
+/// columns absorb the compression first.
 ///
 /// With `fixedLayoutAlgorithm` TextKit floors every column to whole points, so
-/// the cells stop up to `columnCount - 1` pt short of the container (measured:
-/// 6–7 pt for 8 columns) and the header band, the rules and the outline no
-/// longer meet — 1.12's grid filled the width. This override hands out the
-/// columns itself: whole points, `floor(width / n)` each, the remainder 1 pt at
-/// a time to the first columns (and a fractional width's last fraction to the
-/// last one), so they tile `rect` with no gap. Only x and width of the content
-/// rect change; TextKit still decides the row heights and the vertical layout,
-/// and the measurer lays out the same subclass, so parity is unaffected.
+/// this override hands out the columns itself, keeping the header band, rules
+/// and outline aligned. The natural widths include cell padding and dividers.
+/// When they exceed `rect`, columns narrower than an equal share are preserved;
+/// the remaining width is distributed among the wider columns according to
+/// their excess natural widths.
+/// Only x and width of the content rect change; TextKit still decides the row
+/// heights and the vertical layout, and the measurer lays out the same subclass.
 ///
 /// `fixedFirstColumnWidth` (a `.properties` table's key column): column 0 gets
 /// that many whole points, capped at `Metrics.keyColumnMaxFraction` of the
@@ -140,8 +141,11 @@ struct TableText {
 /// makes the split width-dependent, which `.exact` heights already are (every
 /// table re-measures per `contentWidth`, as wrapping does).
 final class FullWidthTextTable: NSTextTable {
-    /// Column 0's natural width (whole points), or nil for equal columns.
+    /// Column 0's natural width (whole points), or nil when unused.
     var fixedFirstColumnWidth: CGFloat?
+    /// Per-column natural widths (including padding and dividers), or nil for
+    /// equal columns.
+    var naturalColumnWidths: [CGFloat]?
 
     override func rect(for block: NSTextTableBlock, layoutAt startingPoint: NSPoint, in rect: NSRect,
                        textContainer: NSTextContainer, characterRange charRange: NSRange) -> NSRect {
@@ -150,8 +154,9 @@ final class FullWidthTextTable: NSTextTable {
         let columns = max(1, numberOfColumns)
         let column = min(max(0, block.startingColumn), columns - 1)
         let whole = floor(rect.width)
+        let natural = naturalColumnWidths.flatMap { $0.count == columns ? $0 : nil }
         // A fixed first column is taken off the front; the remaining columns
-        // share what is left (equal whole points, remainder to the first).
+        // share what is left.
         let fixed = columns > 1 ? fixedFirstColumnWidth.map {
             min(ceil($0), floor(whole * BlockLayout.Table.keyColumnMaxFraction))
         } : nil
@@ -160,6 +165,39 @@ final class FullWidthTextTable: NSTextTable {
         if let fixed, column == 0 {
             x = rect.minX
             width = fixed
+        } else if let natural {
+            let contentWidths = natural.map { max(0, ceil($0)) }
+            let total = contentWidths.reduce(0, +)
+            let available = max(0, whole)
+            let allocated: [CGFloat]
+            if total <= available {
+                allocated = contentWidths
+            } else if total > 0 {
+                let equalShare = floor(available / CGFloat(columns))
+                let baseline = contentWidths.map { min($0, equalShare) }
+                let remaining = available - baseline.reduce(0, +)
+                let excess = contentWidths.map { max(0, $0 - equalShare) }
+                let excessTotal = excess.reduce(0, +)
+                if excessTotal > 0 {
+                    let extraShares = excess.map { remaining * $0 / excessTotal }
+                    var widths = zip(baseline, extraShares).map { $0.0 + floor($0.1) }
+                    let remainder = Int(available - widths.reduce(0, +))
+                    let order = extraShares.indices.sorted {
+                        extraShares[$0].truncatingRemainder(dividingBy: 1)
+                            > extraShares[$1].truncatingRemainder(dividingBy: 1)
+                    }
+                    for index in order.prefix(remainder) {
+                        widths[index] += 1
+                    }
+                    allocated = widths
+                } else {
+                    allocated = baseline
+                }
+            } else {
+                allocated = Array(repeating: 0, count: columns)
+            }
+            x = rect.minX + allocated[..<column].reduce(0, +)
+            width = allocated[column]
         } else {
             let leadingFixed = fixed ?? 0
             let shared = fixed == nil ? columns : columns - 1
@@ -170,7 +208,7 @@ final class FullWidthTextTable: NSTextTable {
             x = rect.minX + leadingFixed + base * CGFloat(index) + CGFloat(min(index, remainder))
             width = base + (index < remainder ? 1 : 0)
         }
-        if column == columns - 1 { width += rect.width - whole }
+        if column == columns - 1, natural == nil { width += rect.width - whole }
         let leading = block.width(for: .margin, edge: .minX) + block.width(for: .border, edge: .minX)
             + block.width(for: .padding, edge: .minX)
         let trailing = block.width(for: .margin, edge: .maxX) + block.width(for: .border, edge: .maxX)
@@ -189,10 +227,10 @@ final class FullWidthTextTable: NSTextTable {
 ///
 /// The look is the one 1.12's SwiftUI table DREW, measured, not what its
 /// modifiers asked for (TS-D2). Metrics come from `BlockLayout.Table`:
-/// - columns are equal, whole points, and fill the width exactly
-///   (`FullWidthTextTable`); a cell can wrap a word earlier than 1.12's
-///   fractional columns did. The measurer lays out the same string, so it is
-///   self-consistent, and the dividers land on whole points;
+/// - grid columns use the widest cell in each column, including header and
+///   body content; they stay content-sized when they fit and shrink
+///   proportionally when the table exceeds its available width. Properties
+///   tables retain their fixed key column and fill the remaining width;
 /// - a cell's padding is 1.12's `.padding`; its 1 pt rule is a BORDER on its
 ///   trailing edge (not the last column) and its bottom edge (not the last
 ///   data row — the header always has one, as 1.12's header separator), so
@@ -225,6 +263,9 @@ enum TableTextBuilder {
                              renderer: renderer)
             }
         }
+        if style == .grid, showsHeader {
+            renderedBands.first?.forEach(raiseToHeaderWeight)
+        }
 
         let table = FullWidthTextTable()
         table.numberOfColumns = columnCount
@@ -233,6 +274,12 @@ enum TableTextBuilder {
         table.hidesEmptyCells = false
         if style == .properties, columnCount > 1 {
             table.fixedFirstColumnWidth = keyColumnWidth(textWidth: naturalWidth(of: renderedBands.map { $0[0] }))
+        } else if style == .grid {
+            table.naturalColumnWidths = (0..<columnCount).map { column in
+                let cells = renderedBands.map { $0[column] }
+                return naturalWidth(of: cells) + 2 * Metrics.cellHorizontalPadding
+                    + (column < columnCount - 1 ? Metrics.dividerWidth : 0)
+            }
         }
 
         let border = NSColor(theme.borderColor)
@@ -257,7 +304,6 @@ enum TableTextBuilder {
             ranges.reserveCapacity(columnCount)
             for column in 0..<columnCount {
                 let cell = band[column]
-                if isHeader { raiseToHeaderWeight(cell) }
                 ranges.append(NSRange(location: result.length, length: cell.length))
                 cell.append(NSAttributedString(string: "\n", attributes: terminatorAttributes))
 
