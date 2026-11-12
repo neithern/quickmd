@@ -1121,6 +1121,26 @@ final class SourceEditorControllerTests: XCTestCase {
         XCTAssertEqual(controller.undoManager.undoActionName, "Paste")
     }
 
+    func testMarkedTextCompositionPreservesTrailingText() {
+        let (controller, _, _) = makeEditor("abc中文def", style: style(dark, scale: 2))
+        let textView = controller.textView
+        textView.setSelectedRange(NSRange(location: 3, length: 0))
+
+        userAction(controller) {
+            textView.setMarkedText("zhong", selectedRange: NSRange(location: 5, length: 0),
+                                   replacementRange: NSRange(location: NSNotFound, length: 0))
+        }
+        XCTAssertTrue(textView.hasMarkedText())
+        XCTAssertEqual(controller.text, "abczhong中文def")
+
+        userAction(controller) {
+            textView.insertText("中", replacementRange: NSRange(location: NSNotFound, length: 0))
+        }
+        XCTAssertEqual(controller.text, "abc中中文def")
+        XCTAssertFalse(textView.hasMarkedText())
+        XCTAssertEqual(controller.text, "abc中中文def", "committing marked text must preserve trailing text")
+    }
+
     /// Replace All with a replacement containing CR (multi-range change):
     /// every replacement is normalised, and the whole change undoes as one.
     func testMultiRangeReplacementWithCRIsNormalizedAsOneUndo() {

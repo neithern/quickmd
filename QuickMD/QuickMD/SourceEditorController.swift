@@ -224,6 +224,8 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     private var focusRequested = false
     /// Re-entrancy guard for the attribute fix-up in `didProcessEditing`.
     private var isFixingAttributes = false
+    /// Prevents attribute repair while NSTextView is processing an approved edit.
+    private var isTextViewEditInProgress = false
     /// The last height handed to `onFindBarHeightChange`.
     private var reportedFindBarHeight: CGFloat = 0
 
@@ -1038,14 +1040,15 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     /// `contains`. Per keystroke this looks at the typed characters only.
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange,
                   replacementString: String?) -> Bool {
+        isTextViewEditInProgress = true
         guard let replacementString, replacementString.unicodeScalars.contains("\r") else { return true }
         let normalized = MarkdownDocument.normalizeLineEndings(replacementString)
         let end = affectedCharRange.location + (normalized as NSString).length
         perform(range: affectedCharRange, replacement: normalized,
                 selection: NSRange(location: end, length: 0))
         // The refused change was a paste, so the step replacing it is one.
-        // AppKit exposes no localized name for it; the app's menus are English.
-        if self.textView.isReadingPasteboard { undoManager.setActionName("Paste") }
+        // AppKit exposes no localized name for it; use the app's own string.
+        if self.textView.isReadingPasteboard { undoManager.setActionName(L("Paste")) }
         return false
     }
 
@@ -1057,6 +1060,7 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     /// as ONE undo step.
     func textView(_ textView: NSTextView, shouldChangeTextInRanges affectedRanges: [NSValue],
                   replacementStrings: [String]?) -> Bool {
+        isTextViewEditInProgress = true
         guard let replacementStrings, replacementStrings.count == affectedRanges.count,
               replacementStrings.contains(where: { $0.unicodeScalars.contains("\r") }) else { return true }
         if affectedRanges.count == 1 {
@@ -1132,6 +1136,8 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     /// input method or a dead key composing there.
     func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions,
                      range editedRange: NSRange, changeInLength delta: Int) {
+        let isTextViewEdit = isTextViewEditInProgress
+        isTextViewEditInProgress = false
         // Every character change, whichever path made it (typing, undo, the
         // find bar, `load`): a tint parsed from an older text must not be
         // applied, and a new one is due. `load` / `reload` / `replaceAll`
@@ -1140,7 +1146,9 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
             textGeneration &+= 1
             scheduleTint()
         }
-        guard editedMask.contains(.editedCharacters), !isFixingAttributes,
+        let isUndoOrRedo = undoManager.isUndoing || undoManager.isRedoing
+        guard editedMask.contains(.editedCharacters), !isFixingAttributes, (!isTextViewEdit || isUndoOrRedo),
+              !textView.hasMarkedText(),
               editedRange.length > 0, NSMaxRange(editedRange) <= textStorage.length else { return }
         let attributes = baseAttributes
         guard !attributes.isEmpty else { return }
@@ -1150,6 +1158,7 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     }
 
     func textDidChange(_ notification: Notification) {
+        isTextViewEditInProgress = false
         cachedIndentUnit = nil
         // A kept top line is a character offset; an edit may have moved it.
         dropPendingAnchor()
