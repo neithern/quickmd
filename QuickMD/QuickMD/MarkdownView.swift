@@ -1235,7 +1235,7 @@ struct MarkdownView: View {
         // Side by side refuses BEFORE entering when the screen has no room.
         let fit = sideBySide ? sideBySideFit() : .fits
         if fit == .tooNarrow {
-            showToast(Self.tooNarrowMessage)
+            showToast(L(Self.tooNarrowMessage))
             return
         }
         // A rendered selection whose text is literally in its source lines is
@@ -1269,7 +1269,7 @@ struct MarkdownView: View {
         if !isSideBySide {
             let fit = sideBySideFit()
             if fit == .tooNarrow {
-                showToast(Self.tooNarrowMessage)
+                showToast(L(Self.tooNarrowMessage))
                 return
             }
             applySideBySideFit(fit)
@@ -2005,12 +2005,12 @@ struct MarkdownView: View {
         alert.informativeText = message
         alert.alertStyle = .warning
         if cancelIsDefault {
-            alert.addButton(withTitle: "Cancel")
-            alert.addButton(withTitle: "Open")
+            alert.addButton(withTitle: L("Cancel"))
+            alert.addButton(withTitle: L("Open"))
             return alert.runModal() == .alertSecondButtonReturn
         }
-        alert.addButton(withTitle: "Open")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: L("Open"))
+        alert.addButton(withTitle: L("Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 

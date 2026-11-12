@@ -157,16 +157,17 @@ enum LocalLinkSafety {
     /// The confirmation's message: what happens, and — when the link's own
     /// name is not the file it opens (a symlink, an alias) — which file.
     static func confirmationMessage(link: URL, check: Check) -> String {
-        var message = "This link opens a program or script on your Mac."
+        var message = L("This link opens a program or script on your Mac.")
         if link.lastPathComponent != check.target.lastPathComponent {
-            message += "\n\u{201C}\(displayName(link.lastPathComponent))\u{201D} points to "
-                + "\u{201C}\(displayName(check.target.lastPathComponent))\u{201D}."
+            message += "\n" + L("“%@” points to “%@”.",
+                                 displayName(link.lastPathComponent),
+                                 displayName(check.target.lastPathComponent))
         }
         return message
     }
 
     static func confirmationTitle(check: Check) -> String {
-        "Open \u{201C}\(displayName(check.target.lastPathComponent))\u{201D}?"
+        L("Open “%@”?", displayName(check.target.lastPathComponent))
     }
 }
 
@@ -237,11 +238,11 @@ enum LocalLinkOpening {
 
     /// The toast for a failure, naming the target (cleaned for display).
     static func message(for failure: Failure, name: String) -> String {
-        let shown = "\u{201C}\(LocalLinkSafety.displayName(name))\u{201D}"
+        let shown = LocalLinkSafety.displayName(name)
         switch failure {
-        case .accessDeclined: return "Couldn\u{2019}t open \(shown) without folder access"
-        case .notFound: return "Couldn\u{2019}t find \(shown)"
-        case .openFailed: return "Couldn\u{2019}t open \(shown)"
+        case .accessDeclined: return L("Couldn’t open “%@” without folder access", shown)
+        case .notFound: return L("Couldn’t find “%@”", shown)
+        case .openFailed: return L("Couldn’t open “%@”", shown)
         }
     }
 }

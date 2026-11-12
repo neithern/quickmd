@@ -30,9 +30,9 @@
 "Edit Source" = "编辑源文件";
 "Save" = "存储";
 "Discard Changes" = "放弃更改";
-"Copy Markdown" = "拷贝 Markdown";
+"Copy Markdown" = "复制 Markdown";
 "Reload" = "重新载入";
-"Open in External Editor" = "在外置编辑器中打开";
+"Open in External Editor" = "在外部编辑器中打开";
 "Find..." = "查找…";
 "Update Available — v%@" = "有可用更新 — v%@";
 "Check for Updates…" = "检查更新…";
@@ -48,7 +48,6 @@
 "Side by Side" = "并排显示";
 "Editor Only" = "仅编辑器";
 "Edit Side by Side" = "并排编辑";
-"Edit source (⌥⌘E)" = "编辑源文件 (⌥⌘E)";
 "Edit source (⌥⌘E) · Option-click to edit side by side (⌥⇧⌘E)" = "编辑源文件 (⌥⌘E) · 按住 Option 键点按以并排编辑 (⌥⇧⌘E)";
 "Show the editor only (⌥⇧⌘E)" = "仅显示编辑器 (⌥⇧⌘E)";
 "Show the rendered document beside the editor (⌥⇧⌘E)" = "在编辑器旁显示渲染后的文档 (⌥⇧⌘E)";
@@ -56,11 +55,11 @@
 "Done" = "完成";
 "Done editing (Esc)" = "完成编辑 (Esc)";
 "Support" = "支持";
-"Support QuickMD development" = "支持简阅 的开发";
+"Support QuickMD development" = "支持 QuickMD 的开发";
 "Back" = "后退";
 "Forward" = "前进";
-"Copy section" = "拷贝章节";
-"Copy code" = "拷贝代码";
+"Copy section" = "复制章节";
+"Copy code" = "复制代码";
 "Show recent documents (⇧⌘D)" = "显示最近使用的文档 (⇧⌘D)";
 "Hide recent documents (⇧⌘D)" = "隐藏最近使用的文档 (⇧⌘D)";
 "Hide recent documents" = "隐藏最近使用的文档";
@@ -94,6 +93,9 @@
 "Fonts" = "字体";
 "Editor" = "编辑器";
 "Copy selected text automatically" = "自动拷贝所选文本";
+"Open documents in separate windows" = "在独立窗口中打开文档";
+"Windows" = "窗口";
+"Documents already open stay as they are. Takes full effect after restarting QuickMD." = "已打开的文档保持不变。重启 QuickMD 后完全生效。";
 "Selection" = "选择";
 "Selected text is copied to the clipboard as soon as you finish selecting. Off by default because it replaces whatever you copied in another app." = "选择完成后，所选文本会立即拷贝到剪贴板。此功能默认关闭，因为它会覆盖你在其他 App 中拷贝的内容。";
 "Show" = "显示";
@@ -140,13 +142,17 @@
 "Zoom in" = "放大";
 "Mermaid Diagram" = "Mermaid 图表";
 "Can’t load “%@”" = "无法载入“%@”";
+"Can’t load “%@” — click to grant folder access" = "无法载入“%@” — 点按以授予文件夹访问权限";
 "Grant Folder Access" = "授予文件夹访问权限";
+"Grant Folder Access…" = "授予文件夹访问权限…";
+"Link" = "链接";
+"Link: %@" = "链接：%@";
 "Image" = "图片";
 
 /* ===== 文档状态 ===== */
 "Parsing…" = "正在解析…";
 "Rendering…" = "正在渲染…";
-"This file changed on disk while you were editing." = "编辑期间此文件已在磁盘上更改。";
+"This file changed on disk while you were editing." = "你在编辑时，此文件已在磁盘上被更改。";
 "Keep My Version" = "保留我的版本";
 "Load Disk Version" = "载入磁盘版本";
 "Close Tab" = "关闭标签页";
@@ -155,7 +161,14 @@
 "Couldn't read the file" = "无法读取文件";
 "Zoom %lld%%" = "缩放 %lld%%";
 "Open “%@:” link?" = "打开“%@:”链接？";
+"Open “%@”?" = "打开“%@”？";
 "This link opens another application:\n%@" = "此链接将打开另一个 App：\n%@";
+"This link opens a program or script on your Mac." = "此链接会在你的 Mac 上打开一个程序或脚本。";
+"“%@” points to “%@”." = "“%@”指向“%@”。";
+"Couldn’t open “%@” without folder access" = "没有文件夹访问权限，无法打开“%@”";
+"Couldn’t find “%@”" = "找不到“%@”";
+"Couldn’t open “%@”" = "无法打开“%@”";
+"Window too narrow for side by side" = "窗口太窄，无法并排显示";
 "Open" = "打开";
 "Cancel" = "取消";
 
@@ -265,7 +278,7 @@
 "Verification failed: %@" = "验证失败：%@";
 
 /* ===== 上下文菜单与撤销 ===== */
-"Copy" = "拷贝";
+"Copy" = "复制";
 "Select All" = "全选";
 "Look Up “%@”" = "查询“%@”";
 "Paste" = "粘贴";

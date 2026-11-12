@@ -221,7 +221,8 @@ struct PictureView: View {
                         chip
                     }
                     .buttonStyle(.plain)
-                    .help("Can\u{2019}t load \u{201C}\(accessDeniedURL.lastPathComponent)\u{201D} \u{2014} click to grant folder access")
+                    .help(L("Can’t load “%@” — click to grant folder access",
+                            accessDeniedURL.lastPathComponent))
                 } else {
                     chip
                 }
@@ -375,7 +376,7 @@ struct PictureView: View {
                 .buttonStyle(.plain)
                 .focusable(false)
                 .help("Enlarge image")
-                .accessibilityLabel(alt.isEmpty ? "Enlarge image" : "Enlarge image: \(alt)")
+                .accessibilityLabel(alt.isEmpty ? L("Enlarge image") : L("Enlarge image: %@", alt))
                 .padding(6)
             }
         }
@@ -552,7 +553,7 @@ private extension View {
     func linkRole(_ link: URL, alt: String) -> some View {
         self
             .help(PictureView.helpText(for: link))
-            .accessibilityLabel(alt.isEmpty ? "Link" : "Link: \(alt)")
+            .accessibilityLabel(alt.isEmpty ? L("Link") : L("Link: %@", alt))
             .accessibilityAddTraits(.isLink)
             .accessibilityRemoveTraits(.isButton)
             .overlay(PointingHandCursorArea().allowsHitTesting(false))

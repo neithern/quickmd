@@ -48,7 +48,7 @@ extension BlockLayout {
         static func chipLabel(alt: String) -> String {
             let line = alt.split(whereSeparator: { $0.isNewline }).joined(separator: " ")
                 .trimmingCharacters(in: .whitespaces)
-            return line.isEmpty ? "Image" : line
+            return line.isEmpty ? L("Image") : line
         }
 
         static func chipFont(fontScale: CGFloat) -> NSFont {

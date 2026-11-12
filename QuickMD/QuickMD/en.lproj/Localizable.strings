@@ -49,7 +49,6 @@
 "Side by Side" = "Side by Side";
 "Editor Only" = "Editor Only";
 "Edit Side by Side" = "Edit Side by Side";
-"Edit source (⌥⌘E)" = "Edit source (⌥⌘E)";
 "Edit source (⌥⌘E) · Option-click to edit side by side (⌥⇧⌘E)" = "Edit source (⌥⌘E) · Option-click to edit side by side (⌥⇧⌘E)";
 "Show the editor only (⌥⇧⌘E)" = "Show the editor only (⌥⇧⌘E)";
 "Show the rendered document beside the editor (⌥⇧⌘E)" = "Show the rendered document beside the editor (⌥⇧⌘E)";
@@ -95,6 +94,9 @@
 "Fonts" = "Fonts";
 "Editor" = "Editor";
 "Copy selected text automatically" = "Copy selected text automatically";
+"Open documents in separate windows" = "Open documents in separate windows";
+"Windows" = "Windows";
+"Documents already open stay as they are. Takes full effect after restarting QuickMD." = "Documents already open stay as they are. Takes full effect after restarting QuickMD.";
 "Selection" = "Selection";
 "Selected text is copied to the clipboard as soon as you finish selecting. Off by default because it replaces whatever you copied in another app." = "Selected text is copied to the clipboard as soon as you finish selecting. Off by default because it replaces whatever you copied in another app.";
 "Show" = "Show";
@@ -141,7 +143,11 @@
 "Zoom in" = "Zoom in";
 "Mermaid Diagram" = "Mermaid Diagram";
 "Can’t load “%@”" = "Can’t load “%@”";
+"Can’t load “%@” — click to grant folder access" = "Can’t load “%@” — click to grant folder access";
 "Grant Folder Access" = "Grant Folder Access";
+"Grant Folder Access…" = "Grant Folder Access…";
+"Link" = "Link";
+"Link: %@" = "Link: %@";
 "Image" = "Image";
 
 /* ===== Document status ===== */
@@ -156,7 +162,14 @@
 "Couldn't read the file" = "Couldn't read the file";
 "Zoom %lld%%" = "Zoom %lld%%";
 "Open “%@:” link?" = "Open “%@:” link?";
+"Open “%@”?" = "Open “%@”?";
 "This link opens another application:\n%@" = "This link opens another application:\n%@";
+"This link opens a program or script on your Mac." = "This link opens a program or script on your Mac.";
+"“%@” points to “%@”." = "“%@” points to “%@”.";
+"Couldn’t open “%@” without folder access" = "Couldn’t open “%@” without folder access";
+"Couldn’t find “%@”" = "Couldn’t find “%@”";
+"Couldn’t open “%@”" = "Couldn’t open “%@”";
+"Window too narrow for side by side" = "Window too narrow for side by side";
 "Open" = "Open";
 "Cancel" = "Cancel";
 
