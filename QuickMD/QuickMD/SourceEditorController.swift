@@ -220,6 +220,8 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     private var focusRequested = false
     /// Re-entrancy guard for the attribute fix-up in `didProcessEditing`.
     private var isFixingAttributes = false
+    /// True between NSTextView's change approval and its matching textDidChange.
+    private var isTextViewEditInProgress = false
     /// The last height handed to `onFindBarHeightChange`.
     private var reportedFindBarHeight: CGFloat = 0
 
@@ -1029,6 +1031,7 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     /// `contains`. Per keystroke this looks at the typed characters only.
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange,
                   replacementString: String?) -> Bool {
+        isTextViewEditInProgress = true
         guard let replacementString, replacementString.unicodeScalars.contains("\r") else { return true }
         let normalized = MarkdownDocument.normalizeLineEndings(replacementString)
         let end = affectedCharRange.location + (normalized as NSString).length
@@ -1048,6 +1051,7 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     /// as ONE undo step.
     func textView(_ textView: NSTextView, shouldChangeTextInRanges affectedRanges: [NSValue],
                   replacementStrings: [String]?) -> Bool {
+        isTextViewEditInProgress = true
         guard let replacementStrings, replacementStrings.count == affectedRanges.count,
               replacementStrings.contains(where: { $0.unicodeScalars.contains("\r") }) else { return true }
         if affectedRanges.count == 1 {
@@ -1131,7 +1135,8 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
             textGeneration &+= 1
             scheduleTint()
         }
-        guard editedMask.contains(.editedCharacters), !isFixingAttributes,
+          guard editedMask.contains(.editedCharacters), !isFixingAttributes, !isTextViewEditInProgress,
+              !textView.hasMarkedText(),
               editedRange.length > 0, NSMaxRange(editedRange) <= textStorage.length else { return }
         let attributes = baseAttributes
         guard !attributes.isEmpty else { return }
@@ -1141,6 +1146,7 @@ final class SourceEditorController: NSObject, NSTextViewDelegate, NSTextStorageD
     }
 
     func textDidChange(_ notification: Notification) {
+        isTextViewEditInProgress = false
         cachedIndentUnit = nil
         // A kept top line is a character offset; an edit may have moved it.
         dropPendingAnchor()
