@@ -78,7 +78,7 @@ final class MathInTextKindsTests: XCTestCase {
         let shown = measured.converted[blocks[0].id]
         XCTAssertEqual(shown?.string, "Quote with \u{FFFC} inline.")
         XCTAssertEqual(recorder.latex, ["x^2"])
-        XCTAssertEqual(recorder.calls.first?.size, 14, "body size")
+        XCTAssertEqual(recorder.calls.first?.size, 16, "body size")
         // Copy: the formula is its source, `$` delimiters included — as a paragraph copies.
         XCTAssertEqual(DocumentCopyBuilder.build([.text(shown ?? NSAttributedString())]).plain,
                        "Quote with $x^2$ inline.")
@@ -257,7 +257,7 @@ final class MathInTextKindsTests: XCTestCase {
         let table = measured.tables[blocks[0].id]
         XCTAssertEqual(table?.string.string, "A\nB\n\u{FFFC}\n$\n\u{FFFC}\nprice $5 and $10\n$x$\n$y$\n")
         XCTAssertEqual(recorder.latex, ["a | b", "\\frac{1}{2}"])
-        XCTAssertEqual(recorder.calls.first?.size, 14)
+        XCTAssertEqual(recorder.calls.first?.size, 16)
     }
 
     /// The table row is `.exact` and built on the main actor once it has a
@@ -387,7 +387,7 @@ final class MathInTextKindsTests: XCTestCase {
         let blocks = parse(markdown, theme: dark, fontScale: 1.5)
         _ = measure(blocks, math: engine(recorder), theme: dark, fontScale: 1.5)
         XCTAssertEqual(recorder.calls.map(\.latex), ["a", "b", "d"])
-        XCTAssertEqual(recorder.calls.map(\.size), [21, 39, 21], "14 × 1.5, H2 26 × 1.5, 14 × 1.5")
+        XCTAssertEqual(recorder.calls.map(\.size), [24, 39, 24], "16 × 1.5, H2 26 × 1.5, 16 × 1.5")
         XCTAssertEqual(recorder.calls.map(\.isDark), [true, true, true])
     }
 
@@ -560,7 +560,7 @@ final class MathInTextKindsTests: XCTestCase {
         XCTAssertEqual(measured.converted[blocks[2].id]?.string, "\u{FFFC} after")
         XCTAssertEqual(measured.tables[blocks[3].id]?.string.string, "A\nB\n\u{FFFC}\nin \u{FFFC} cell\n")
         XCTAssertEqual(recorder.latex, ["v", "x", "y", "z", "w"])
-        XCTAssertEqual(recorder.calls.map(\.size), [14, 14, 14, 14, 14], "inline size")
+        XCTAssertEqual(recorder.calls.map(\.size), [16, 16, 16, 16, 16], "inline size")
         XCTAssertEqual(DocumentCopyBuilder.build([.text(measured.converted[blocks[1].id]!)]).plain, "Text $$x$$ more")
     }
 
@@ -625,7 +625,7 @@ final class MathInTextKindsTests: XCTestCase {
         """)
         let measured = measure(blocks, math: engine(), width: width)
 
-        // Table: 900 pt in a ~130 pt cell is under 50 % → the source, in the cell.
+        // The content-sized column still cannot fit half the formula image, so it shows the source.
         guard let table = measured.tables[blocks[0].id] else { return XCTFail("no table") }
         let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: width, height: 10))
         textView.configureForSelfSizing()
@@ -641,7 +641,10 @@ final class MathInTextKindsTests: XCTestCase {
         XCTAssertGreaterThan(drawn.width, 0)
         XCTAssertLessThanOrEqual(drawn.maxX, cellBounds.maxX + 0.5, "inside its cell: \(drawn) in \(cellBounds)")
         XCTAssertGreaterThanOrEqual(drawn.minX, cellBounds.minX - 0.5)
-        XCTAssertGreaterThanOrEqual(drawn.height, 2 * 17, "the source wraps onto several lines in a narrow cell")
+        XCTAssertTrue(FittingMathAttachment.showsSource(width: Self.wideSize.width,
+                                                        availableWidth: cellBounds.width))
+        XCTAssertGreaterThanOrEqual(drawn.height, 17, "source line is drawn in the cell")
+        XCTAssertLessThan(drawn.width, cellBounds.width, "the source is shown instead of a scaled image")
         XCTAssertEqual(measured.table.heights[0] - 2 * BlockLayout.Document.tableOuterVerticalPadding,
                        TableTextBuilder.tableHeight(layoutManager: layoutManager, container: textView.textContainer!))
 
@@ -799,7 +802,7 @@ final class MathInTextKindsTests: XCTestCase {
         textView.textStorage?.setAttributedString(table.string)
         textView.layoutManager?.ensureLayout(for: textView.textContainer!)
         let cell = textView.tableCellBounds(band: 1, column: 1, layout: table.layout) ?? .zero
-        let font = NSFont.systemFont(ofSize: 14)
+        let font = NSFont.systemFont(ofSize: 16)
         let line = ceil(font.ascender - font.descender + font.leading) + 1
         XCTAssertGreaterThan(cell.height, 4 * line, "wraps")
         XCTAssertLessThanOrEqual(cell.height, CGFloat(FittingMathAttachment.maximumSourceLines) * line

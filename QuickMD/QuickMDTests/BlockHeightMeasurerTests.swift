@@ -375,6 +375,10 @@ final class BlockHeightMeasurerTests: XCTestCase {
     plain code
     ```
 
+    <table>
+    <tr><td>HTML table <img src="table.png"></td></tr>
+    </table>
+
     | a | b |
     |---|---|
     | 1 | 2 |
@@ -419,14 +423,15 @@ final class BlockHeightMeasurerTests: XCTestCase {
             case .text, .blockquote, .alert, .codeBlock, .table:
                 XCTAssertEqual(kind, .exact, "\(block.id) should be exact")
                 seen.insert(exemplar(block))
-            case .heading, .mathBlock, .image, .imageRow, .mermaidDiagram, .svgImage:
+            case .heading, .mathBlock, .image, .imageRow, .htmlTable, .mermaidDiagram, .svgImage:
                 XCTAssertEqual(kind, .reported, "\(block.id) should be reported")
                 seen.insert(exemplar(block))
             }
         }
         // Every block kind is actually exercised by the fixture.
         XCTAssertEqual(seen, ["text", "blockquote", "alert", "codeBlock",
-                              "heading", "table", "mathBlock", "image", "imageRow", "mermaidDiagram", "svgImage"])
+                              "heading", "table", "htmlTable", "mathBlock", "image", "imageRow",
+                              "mermaidDiagram", "svgImage"])
 
         // Converted strings exist for exactly the TextBlockView-backed kinds.
         for block in blocks {
@@ -469,6 +474,7 @@ final class BlockHeightMeasurerTests: XCTestCase {
         switch block.content {
         case .text: return "text"
         case .table: return "table"
+        case .htmlTable: return "htmlTable"
         case .codeBlock: return "codeBlock"
         case .image: return "image"
         case .imageRow: return "imageRow"

@@ -218,7 +218,7 @@ final class TableTextTests: XCTestCase {
         return (traits?[.weight] as? CGFloat) ?? NSFont.Weight.regular.rawValue
     }
 
-    /// The renderer's 14·scale in every cell: semibold in the header band
+    /// The renderer's 16·scale in every cell: semibold in the header band
     /// (v1.13), regular in the data bands (as 1.12 drew every cell); header
     /// band background; rules on trailing/bottom edges only, the header always
     /// keeping its bottom rule.
@@ -351,12 +351,9 @@ final class TableTextTests: XCTestCase {
                              TableTextBuilder.height(of: built.string, width: 1000))
     }
 
-    /// Review fix (2026-10-22, seen on screen with 8 columns at 1920 pt): plain
-    /// `NSTextTable` floors every column, so the cells stopped up to
-    /// `columns - 1` pt short of the outline. `FullWidthTextTable` tiles the
-    /// width exactly — first column at 0, last column at the right edge, no
-    /// gaps — and the measurer still equals the laid-out view.
-    func testColumnsSpanTheFullWidthAndParityHolds() {
+    /// Grid columns follow their widest cell; the last column fills unused
+    /// space, and narrow columns stay natural when wider ones absorb overflow.
+    func testColumnsAdaptToContentAndConstrainToAvailableWidth() {
         let wrapping = "a longer cell text that wraps several times in the narrower columns"
         for columns in 1...9 {
             let headers = (0..<columns).map { "h\($0)" }
@@ -381,16 +378,21 @@ final class TableTextTests: XCTestCase {
                     }
                     guard rects.count == columns else { continue }
                     XCTAssertEqual(rects[0].minX, 0, accuracy: 0.5, "\(tag) band \(band) starts at 0")
-                    XCTAssertEqual(rects[columns - 1].maxX, width, accuracy: 0.5, "\(tag) band \(band) reaches the edge")
+                    XCTAssertLessThanOrEqual(rects[columns - 1].maxX, width + 0.5,
+                                              "\(tag) stays within the available width")
                     for column in 1..<columns {
                         XCTAssertEqual(rects[column].minX, rects[column - 1].maxX, accuracy: 0.01,
                                        "\(tag) band \(band) gap before column \(column)")
                         XCTAssertEqual(rects[column].minY, rects[0].minY, accuracy: 0.01, tag)
                         XCTAssertEqual(rects[column].height, rects[0].height, accuracy: 0.01, tag)
                     }
-                    // Whole-point columns; only the last one may be wider by 1.
-                    let widths = rects.map(\.width)
-                    XCTAssertLessThanOrEqual((widths.max() ?? 0) - (widths.min() ?? 0), 1.0, tag)
+                    if width == 1913, columns > 1 {
+                        XCTAssertEqual(rects[columns - 1].maxX, width, accuracy: 0.5,
+                                       "\(tag) last column reaches the table outline")
+                        let widths = rects.map(\.width)
+                        XCTAssertGreaterThan((widths.max() ?? 0) - (widths.min() ?? 0), 1,
+                                             "\(tag) widths reflect the contents")
+                    }
                 }
                 let measured = BlockHeightMeasurer.measure(blocks: [block], theme: theme, fontScale: 1,
                                                            contentWidth: width, math: nil).table.heights[0]
@@ -400,6 +402,25 @@ final class TableTextTests: XCTestCase {
                 XCTAssertEqual(measured, live, tag)
             }
         }
+    }
+
+    func testNarrowColumnKeepsNaturalWidthWhenWideColumnsShrink() throws {
+        let longCell = String(repeating: "项", count: 40)
+        let headers = ["ID", "需求", "验收要点"]
+        let rows = [["R1", longCell, longCell], ["R2", longCell, longCell]]
+        let built = TableTextBuilder.build(headers: headers, rows: rows,
+                                           alignments: Array(repeating: .leading, count: headers.count),
+                                           style: .grid, theme: theme, fontScale: 1)
+
+        func firstColumnWidth(_ width: CGFloat) -> CGFloat? {
+            let textView = liveTextView(built, width: width)
+            return textView.tableCellBounds(band: 0, column: 0, layout: built.layout)?.width
+        }
+
+        let constrained = try XCTUnwrap(firstColumnWidth(600))
+        let unconstrained = try XCTUnwrap(firstColumnWidth(2_000))
+        XCTAssertLessThan(constrained, 100)
+        XCTAssertEqual(constrained, unconstrained, accuracy: 0.5)
     }
 
     /// Review fix: an instance built for another theme, light/dark variant or

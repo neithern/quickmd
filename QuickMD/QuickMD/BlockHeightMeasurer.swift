@@ -74,11 +74,13 @@ enum BlockLayout {
     enum Document {
         static let contentHorizontalPadding: CGFloat = 32
         static let contentVerticalPadding: CGFloat = 24
+        static let maximumPageWidthDefaultsKey = "maximumPageWidth"
+        static let defaultMaximumPageWidth = 960.0
 
         // MARK: Reading mode (v1.9)
         //
-        // Distraction-free reading changes exactly two numbers of the document
-        // column: it stops growing past a comfortable measure and gets more air
+        // Distraction-free reading narrows the document to a zoom-scaled
+        // comfortable measure (up to the global 960 pt cap) and adds more air
         // above and below. Everything else about a block's geometry is the same,
         // so `BlockHeightMeasurer` needs no reading-mode branch at all — it is
         // handed the clamped `contentWidth` like any other width.
@@ -90,19 +92,32 @@ enum BlockLayout {
         /// The cap at other zooms is `readingColumnCap(fontScale:)`.
         static let readingMaxContentWidth: CGFloat = 720
 
-        /// Reading mode's column cap at `fontScale`: `readingMaxContentWidth`
-        /// scaled with the body text (16 pt × the zoom; there is no other body
-        /// size setting — Settings' default zoom IS the starting zoom), in
-        /// whole points. The line keeps its ~90 characters at every zoom:
-        /// until 1.14.4 the cap stayed 720 pt, so 200 % left ~45 characters a
-        /// line and 50 % ~180. Still capped by the window (`columnWidth`).
+        /// Reading mode's preferred column cap at `fontScale`, scaled with the
+        /// body text in whole points.
         static func readingColumnCap(fontScale: CGFloat) -> CGFloat {
             (readingMaxContentWidth * max(fontScale, 0)).rounded()
         }
 
+        /// A stored zero disables the page-width cap. Invalid stored values fall
+        /// back to the default; otherwise the setting is a whole number of points.
+        static func normalizedMaximumPageWidth(_ value: Double) -> Double {
+            guard value.isFinite else { return defaultMaximumPageWidth }
+            return max(0, value.rounded())
+        }
+
+        /// The cap shared by rendered layout and its measurement. A zero setting
+        /// disables both the global cap and Reading Mode's preferred cap.
+        static func renderedColumnCap(readingFontScale: CGFloat?, maximumPageWidth: Double) -> CGFloat? {
+            let configuredWidth = normalizedMaximumPageWidth(maximumPageWidth)
+            guard configuredWidth > 0 else { return nil }
+            let pageCap = CGFloat(configuredWidth)
+            guard let readingFontScale else { return pageCap }
+            return min(pageCap, readingColumnCap(fontScale: readingFontScale))
+        }
+
         /// The width a block view gets — the width the heights are measured
         /// at: `inner` (the clip's whole points − 2 × `contentHorizontalPadding`),
-        /// no wider than `cap` in reading mode. THE one definition, used by
+        /// no wider than `cap`. THE one definition, used by
         /// `VirtualBlockList` (cells and published width), by `MarkdownView`
         /// (the width a zoom in reading mode measures its parse at) and by
         /// `SourceEditorController.columnGeometry`.
@@ -117,9 +132,12 @@ enum BlockLayout {
         /// parse is installed (`inner` capped at that zoom), so a zoom in
         /// reading mode measures the document once, not at the old column
         /// and then again. 0 (no layout yet) stays 0.
-        static func parseWidth(contentWidth: CGFloat, inner: CGFloat, readingFontScale: CGFloat?) -> CGFloat {
+        static func parseWidth(contentWidth: CGFloat, inner: CGFloat, readingFontScale: CGFloat?,
+                               maximumPageWidth: Double = defaultMaximumPageWidth) -> CGFloat {
             guard contentWidth > 0, inner > 0, let readingFontScale else { return contentWidth }
-            return columnWidth(inner: inner, cap: readingColumnCap(fontScale: readingFontScale))
+            return columnWidth(inner: inner,
+                               cap: renderedColumnCap(readingFontScale: readingFontScale,
+                                                      maximumPageWidth: maximumPageWidth))
         }
         /// `contentVerticalPadding`'s reading-mode counterpart: the top and
         /// bottom breathing room, doubled, because in reading mode nothing else
@@ -491,7 +509,7 @@ enum BlockLayout {
         /// what 1.12 actually drew (its 13 pt / semibold header modifiers lost
         /// to the runs' own font). The builder gives each cell's terminating
         /// "\n" this font too, so an empty cell is one line of it.
-        static let cellFontSize: CGFloat = 14
+        static let cellFontSize: CGFloat = 16
         static let cornerRadius: CGFloat = 4
         /// A `.properties` table's key column (widest key + paddings) never
         /// takes more than this share of the table's width; longer keys wrap.
@@ -918,7 +936,7 @@ enum BlockTextConverter {
     /// longer applies).
     ///
     /// `mathFontSize`: the size formulas are typeset at and centred against —
-    /// nil is the body text's, 14 × `fontScale` (paragraphs, quotes, table
+    /// nil is the body text's, 16 × `fontScale` (paragraphs, quotes, table
     /// cells); a heading passes its own (`makeMathString`).
     static func makeNSAttributedString(from attributed: AttributedString,
                                        hasInlineMath: Bool,
@@ -926,7 +944,7 @@ enum BlockTextConverter {
                                        fontScale: CGFloat,
                                        mathFontSize: CGFloat? = nil,
                                        math: MathRendering) -> NSAttributedString {
-        let mathFontSize = mathFontSize ?? 14 * fontScale
+        let mathFontSize = mathFontSize ?? 16 * fontScale
         guard hasInlineMath else {
             return (try? NSAttributedString(attributed, including: \.appKit))
                 ?? NSAttributedString(string: String(attributed.characters))
@@ -1152,7 +1170,7 @@ enum BlockTextConverter {
         }
         // Centred on the body text's cap height, as an inline formula: the
         // line is as tall as the formula, whatever its depth.
-        let bodyFont = theme.fonts.appKit(size: 14 * fontScale)
+        let bodyFont = theme.fonts.appKit(size: 16 * fontScale)
         let attachment = FittingMathAttachment(image: image, capHeight: bodyFont.capHeight,
                                                source: displayFallback(latex, theme: theme, fontScale: fontScale))
         let paragraph = NSMutableParagraphStyle()
@@ -1712,7 +1730,7 @@ enum BlockHeightMeasurer {
         // pending row is at least the right order of magnitude on screen if it is
         // ever shown before `measureMathRows` runs.
         let pendingParagraphHeight = BlockLayout.singleLineHeight(
-            for: theme.fonts.appKit(size: 14 * fontScale))
+            for: theme.fonts.appKit(size: 16 * fontScale))
         let renderer = MarkdownRenderer(theme: theme, fontScale: fontScale)
 
         // Derived widths, clamped once (see `BlockLayout.clampedWidth`).
@@ -1849,6 +1867,37 @@ enum BlockHeightMeasurer {
                                + 2 * BlockLayout.Document.tableOuterVerticalPadding)
                 kinds.append(.exact)
 
+            case .htmlTable(let rows):
+                let columnCount = max(rows.map(\.count).max() ?? 1, 1)
+                let columnWidth = max((textWidth - CGFloat(columnCount - 1)) / CGFloat(columnCount), 1)
+                let cellWidth = max(columnWidth - 16, 1)
+                let rowHeights = rows.map { row in
+                    row.map { cell -> CGFloat in
+                        let textHeight: CGFloat
+                        if cell.text.isEmpty {
+                            textHeight = 0
+                        } else {
+                            let attributed = renderer.renderInline(cell.text)
+                            let text = BlockTextConverter.makeNSAttributedString(
+                                from: attributed, hasInlineMath: false,
+                                theme: theme, fontScale: fontScale, math: engine)
+                            textHeight = Self.exactHeight(text: text, width: cellWidth)
+                        }
+                        let imageHeight = cell.images.reduce(CGFloat.zero) { total, image in
+                            let picture = imageSizes[image.url as NSString].map {
+                                BlockLayout.ImageBlock.pictureSize(imageSize: $0, htmlWidth: image.width,
+                                                                   fontScale: fontScale, contentWidth: cellWidth).height
+                            } ?? BlockLayout.ImageBlock.placeholderHeight
+                            return total + picture
+                        }
+                        return textHeight + imageHeight
+                    }.max() ?? BlockLayout.singleLineHeight(for: theme.fonts.appKit(size: 16 * fontScale))
+                }
+                let separators = CGFloat(max(rows.count - 1, 0))
+                heights.append(rowHeights.reduce(0, +) + CGFloat(rows.count) * 16 + separators
+                               + 2 * BlockLayout.Document.tableOuterVerticalPadding)
+                kinds.append(.reported)
+
             case .mathBlock(let latex):
                 if let math {
                     heights.append(math.displayHeight(latex, theme, fontScale) + mathChrome)
@@ -1959,7 +2008,7 @@ enum BlockHeightMeasurer {
             }
         case .alert: pad = Document.alertOuterVerticalPadding
         case .codeBlock: pad = Document.codeOuterVerticalPadding
-        case .table:
+        case .table, .htmlTable:
             pad = Document.tableOuterVerticalPadding
         case .mathBlock: pad = Document.mathOuterVerticalPadding + BlockLayout.Math.verticalPadding
         case .mermaidDiagram:

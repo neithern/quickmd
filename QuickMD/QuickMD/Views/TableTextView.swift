@@ -55,6 +55,105 @@ struct TableTextBlockView: View {
     }
 }
 
+struct HTMLTableBlockView: View {
+    let rows: [[HTMLTableCell]]
+    let theme: MarkdownTheme
+    let documentURL: URL?
+    let fontScale: CGFloat
+    let contentWidth: CGFloat
+    let heightCache: BlockHeightCache
+    let onEnlarge: (GraphicPreview) -> Void
+
+    private let renderer: MarkdownRenderer
+    private let cellPadding: CGFloat = 8
+
+    typealias Metrics = BlockLayout.Table
+
+    init(rows: [[HTMLTableCell]], theme: MarkdownTheme, documentURL: URL?, fontScale: CGFloat,
+         contentWidth: CGFloat, heightCache: BlockHeightCache,
+         onEnlarge: @escaping (GraphicPreview) -> Void) {
+        self.rows = rows
+        self.theme = theme
+        self.documentURL = documentURL
+        self.fontScale = fontScale
+        self.contentWidth = contentWidth
+        self.heightCache = heightCache
+        self.onEnlarge = onEnlarge
+        self.renderer = MarkdownRenderer(theme: theme, fontScale: fontScale)
+    }
+
+    var body: some View {
+        let columnCount = max(rows.map(\.count).max() ?? 1, 1)
+        let cellWidth = max((contentWidth - CGFloat(columnCount - 1)) / CGFloat(columnCount), 1)
+        VStack(spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(0..<columnCount, id: \.self) { column in
+                        if column < row.count {
+                            cellView(row[column], width: cellWidth)
+                        } else {
+                            emptyCell(width: cellWidth)
+                        }
+                    }
+                }
+                if rowIndex < rows.count - 1 {
+                    Rectangle().fill(theme.borderColor).frame(height: 1)
+                }
+            }
+        }
+        .background(theme.backgroundColor)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.cornerRadius))
+        .overlay(RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+            .stroke(theme.borderColor, lineWidth: Metrics.borderWidth))
+    }
+
+    private func cellView(_ cell: HTMLTableCell, width: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if !cell.text.isEmpty {
+                Text(cellText(cell))
+                    .multilineTextAlignment(textAlignment(cell.alignment))
+                    .frame(maxWidth: .infinity, alignment: frameAlignment(cell.alignment))
+            }
+            ForEach(Array(cell.images.enumerated()), id: \.offset) { _, image in
+                ImageBlockView(url: image.url, alt: image.alt, width: image.width,
+                               theme: theme, documentURL: documentURL, fontScale: fontScale,
+                               contentWidth: max(width - 2 * cellPadding, 1), heightCache: heightCache,
+                               showsCaption: false, onEnlarge: onEnlarge)
+            }
+        }
+        .padding(cellPadding)
+        .frame(width: width, alignment: frameAlignment(cell.alignment))
+        .background(cell.isHeader ? theme.headerBackgroundColor : theme.backgroundColor)
+        .overlay(Rectangle().stroke(theme.borderColor.opacity(0.45), lineWidth: 0.5))
+    }
+
+    private func emptyCell(width: CGFloat) -> some View {
+        Color.clear.frame(width: width).overlay(Rectangle().stroke(theme.borderColor.opacity(0.45), lineWidth: 0.5))
+    }
+
+    private func cellText(_ cell: HTMLTableCell) -> AttributedString {
+        var text = renderer.renderInline(cell.text)
+        if cell.isHeader { text.setDualFont(size: renderer.scaled(16), bold: true, fonts: theme.fonts) }
+        return text
+    }
+
+    private func textAlignment(_ alignment: HTMLTableAlignment) -> TextAlignment {
+        switch alignment {
+        case .leading: return .leading
+        case .center: return .center
+        case .trailing: return .trailing
+        }
+    }
+
+    private func frameAlignment(_ alignment: HTMLTableAlignment) -> Alignment {
+        switch alignment {
+        case .leading: return .leading
+        case .center: return .center
+        case .trailing: return .trailing
+        }
+    }
+}
+
 // MARK: - NSTextView Wrapper
 
 private struct TableTextRepresentable: NSViewRepresentable {
