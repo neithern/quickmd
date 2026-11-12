@@ -121,15 +121,17 @@ struct TableText {
 }
 
 /// An `NSTextTable` whose columns use their natural content widths when they
-/// fit. If they do not, naturally narrow columns keep their width and wider
-/// columns absorb the compression first.
+/// fit. The last column fills any remaining space; if the table is too wide,
+/// naturally narrow columns keep their width and wider columns absorb the
+/// compression first.
 ///
 /// With `fixedLayoutAlgorithm` TextKit floors every column to whole points, so
 /// this override hands out the columns itself, keeping the header band, rules
 /// and outline aligned. The natural widths include cell padding and dividers.
 /// When they exceed `rect`, columns narrower than an equal share are preserved;
 /// the remaining width is distributed among the wider columns according to
-/// their excess natural widths.
+/// their excess natural widths. If the columns fit, any unused space is added
+/// to the last column so its edge stays aligned with the table outline.
 /// Only x and width of the content rect change; TextKit still decides the row
 /// heights and the vertical layout, and the measurer lays out the same subclass.
 ///
@@ -171,7 +173,9 @@ final class FullWidthTextTable: NSTextTable {
             let available = max(0, whole)
             let allocated: [CGFloat]
             if total <= available {
-                allocated = contentWidths
+                var widths = contentWidths
+                widths[columns - 1] += available - total
+                allocated = widths
             } else if total > 0 {
                 let equalShare = floor(available / CGFloat(columns))
                 let baseline = contentWidths.map { min($0, equalShare) }
@@ -208,7 +212,7 @@ final class FullWidthTextTable: NSTextTable {
             x = rect.minX + leadingFixed + base * CGFloat(index) + CGFloat(min(index, remainder))
             width = base + (index < remainder ? 1 : 0)
         }
-        if column == columns - 1, natural == nil { width += rect.width - whole }
+        if column == columns - 1 { width += rect.width - whole }
         let leading = block.width(for: .margin, edge: .minX) + block.width(for: .border, edge: .minX)
             + block.width(for: .padding, edge: .minX)
         let trailing = block.width(for: .margin, edge: .maxX) + block.width(for: .border, edge: .maxX)
@@ -228,8 +232,8 @@ final class FullWidthTextTable: NSTextTable {
 /// The look is the one 1.12's SwiftUI table DREW, measured, not what its
 /// modifiers asked for (TS-D2). Metrics come from `BlockLayout.Table`:
 /// - grid columns use the widest cell in each column, including header and
-///   body content; they stay content-sized when they fit and shrink
-///   proportionally when the table exceeds its available width. Properties
+///   body content; the last column fills any unused space, while narrow columns
+///   stay content-sized when the table exceeds its available width. Properties
 ///   tables retain their fixed key column and fill the remaining width;
 /// - a cell's padding is 1.12's `.padding`; its 1 pt rule is a BORDER on its
 ///   trailing edge (not the last column) and its bottom edge (not the last

@@ -351,8 +351,8 @@ final class TableTextTests: XCTestCase {
                              TableTextBuilder.height(of: built.string, width: 1000))
     }
 
-    /// Grid columns follow their widest cell when the natural table fits;
-    /// narrow columns stay natural while wider columns absorb overflow.
+    /// Grid columns follow their widest cell; the last column fills unused
+    /// space, and narrow columns stay natural when wider ones absorb overflow.
     func testColumnsAdaptToContentAndConstrainToAvailableWidth() {
         let wrapping = "a longer cell text that wraps several times in the narrower columns"
         for columns in 1...9 {
@@ -387,7 +387,8 @@ final class TableTextTests: XCTestCase {
                         XCTAssertEqual(rects[column].height, rects[0].height, accuracy: 0.01, tag)
                     }
                     if width == 1913, columns > 1 {
-                        XCTAssertLessThan(rects[columns - 1].maxX, width - 1, "\(tag) does not stretch")
+                        XCTAssertEqual(rects[columns - 1].maxX, width, accuracy: 0.5,
+                                       "\(tag) last column reaches the table outline")
                         let widths = rects.map(\.width)
                         XCTAssertGreaterThan((widths.max() ?? 0) - (widths.min() ?? 0), 1,
                                              "\(tag) widths reflect the contents")
