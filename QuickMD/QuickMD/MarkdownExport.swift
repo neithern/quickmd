@@ -473,6 +473,75 @@ struct PrintableImageRowView: View {
     }
 }
 
+struct PrintableHTMLTableView: View {
+    let rows: [[HTMLTableCell]]
+    let documentURL: URL?
+
+    private let renderer = MarkdownRenderer(colorScheme: .light)
+    private let theme = MarkdownTheme.exportTheme(for: .light)
+    private let maxWidth: CGFloat = 600
+    private let cellPadding: CGFloat = 8
+
+    var body: some View {
+        let columnCount = max(rows.map(\.count).max() ?? 1, 1)
+        let cellWidth = maxWidth / CGFloat(columnCount)
+        VStack(spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
+                        cellView(cell, width: cellWidth)
+                    }
+                }
+                Rectangle().fill(theme.borderColor).frame(height: 1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.borderColor, lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private func cellView(_ cell: HTMLTableCell, width: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if !cell.text.isEmpty {
+                Text(cellText(cell))
+                    .multilineTextAlignment(textAlignment(cell.alignment))
+                    .frame(maxWidth: .infinity, alignment: frameAlignment(cell.alignment))
+            }
+            ForEach(Array(cell.images.enumerated()), id: \.offset) { _, image in
+                PrintableImageView(url: image.url, alt: image.alt, width: image.width,
+                                   documentURL: documentURL, showsCaption: false)
+                    .frame(maxWidth: .infinity, alignment: frameAlignment(cell.alignment))
+            }
+        }
+        .padding(cellPadding)
+        .frame(width: width, alignment: frameAlignment(cell.alignment))
+        .overlay(Rectangle().stroke(theme.borderColor, lineWidth: 0.5))
+        .background(cell.isHeader ? theme.headerBackgroundColor : Color.white)
+    }
+
+    private func cellText(_ cell: HTMLTableCell) -> AttributedString {
+        var text = renderer.renderInline(cell.text)
+        if cell.isHeader { text.setDualFont(size: 16, bold: true, fonts: theme.fonts) }
+        return text
+    }
+
+    private func textAlignment(_ alignment: HTMLTableAlignment) -> TextAlignment {
+        switch alignment {
+        case .leading: return .leading
+        case .center: return .center
+        case .trailing: return .trailing
+        }
+    }
+
+    private func frameAlignment(_ alignment: HTMLTableAlignment) -> Alignment {
+        switch alignment {
+        case .leading: return .leading
+        case .center: return .center
+        case .trailing: return .trailing
+        }
+    }
+}
+
 /// Once per folder per session: `restoreAccess` starts a security-scoped
 /// access each time it succeeds, and `PrintableImageView.body` runs twice per
 /// image per export — the memo keeps that to one start per folder.
@@ -514,6 +583,9 @@ struct MarkdownPrintableBlockView: View {
 
             case .table(let headers, let rows, let alignments, let style):
                 PrintableTableView(headers: headers, rows: rows, alignments: alignments, style: style)
+
+            case .htmlTable(let rows):
+                PrintableHTMLTableView(rows: rows, documentURL: documentURL)
 
             case .codeBlock(let code, let language):
                 PrintableCodeBlockView(code: code, language: language)
@@ -695,15 +767,15 @@ class PDFExportManager {
     static func exportToPDF(documentText: String, suggestedName: String = "document",
                             documentURL: URL? = nil) {
         guard !documentText.isEmpty else {
-            showError("No document content to export")
+            showError(L("No document content to export"))
             return
         }
 
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.pdf]
         savePanel.nameFieldStringValue = "\(suggestedName).pdf"
-        savePanel.title = "Export as PDF"
-        savePanel.message = "Choose a location to save the PDF"
+        savePanel.title = L("Export as PDF")
+        savePanel.message = L("Choose a location to save the PDF")
 
         savePanel.begin { response in
             guard response == .OK, let url = savePanel.url else { return }
@@ -723,13 +795,13 @@ class PDFExportManager {
                 guard let pdfData = Self.generateMultiPagePDF(blocks: blocks,
                                                               mermaidImages: mermaidImages,
                                                               documentURL: documentURL) else {
-                    Self.showError("Failed to generate PDF")
+                    Self.showError(L("Failed to generate PDF"))
                     return
                 }
                 do {
                     try pdfData.write(to: url)
                 } catch {
-                    Self.showError("Failed to save PDF: \(error.localizedDescription)")
+                    Self.showError(L("Failed to save PDF: %@", error.localizedDescription))
                 }
             }
         }
@@ -882,10 +954,10 @@ class PDFExportManager {
 
     private static func showError(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = "Export Error"
+        alert.messageText = L("Export Error")
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: L("OK"))
         alert.runModal()
     }
 }
@@ -903,13 +975,13 @@ class PrintManager {
         // Use the same multi-page PDF generation as export
         guard let pdfData = PDFExportManager.generateMultiPagePDF(documentText: documentText,
                                                                   documentURL: documentURL) else {
-            showError("Failed to render document for printing")
+            showError(L("Failed to render document for printing"))
             return
         }
 
         // Create PDFDocument from data
         guard let pdfDocument = PDFDocument(data: pdfData) else {
-            showError("Failed to create PDF for printing")
+            showError(L("Failed to create PDF for printing"))
             return
         }
 
@@ -928,7 +1000,7 @@ class PrintManager {
             scalingMode: .pageScaleNone,
             autoRotate: false
         ) else {
-            showError("Failed to create print operation")
+            showError(L("Failed to create print operation"))
             return
         }
 
@@ -943,10 +1015,10 @@ class PrintManager {
 
     private static func showError(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = "Print Error"
+        alert.messageText = L("Print Error")
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: L("OK"))
         alert.runModal()
     }
 }

@@ -179,6 +179,18 @@ struct MarkdownRenderer: Sendable {
     /// Scales a design-time point size to this render pass's zoom level.
     func scaled(_ size: CGFloat) -> CGFloat { size * fontScale }
 
+    private static let bodyLineSpacing: CGFloat = 6
+
+    private func applyingBodyLineSpacing(_ attr: AttributedString) -> AttributedString {
+        var result = attr
+        let existing = result[AttributeScopes.AppKitAttributes.ParagraphStyleAttribute.self]
+        // Preserve hanging indents while adding the spacing.
+        let style = (existing?.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+        style.lineSpacing = scaled(Self.bodyLineSpacing)
+        result[AttributeScopes.AppKitAttributes.ParagraphStyleAttribute.self] = style
+        return result
+    }
+
     // MARK: - Main Render
 
     func render(_ markdown: String) -> AttributedString {
@@ -204,9 +216,10 @@ struct MarkdownRenderer: Sendable {
         var result = AttributedString()
         for (index, line) in lines.enumerated() {
             if index < itemColumns.count, let column = itemColumns[index] {
-                result.append(renderItemParagraph(line, column: column))
+                result.append(applyingBodyLineSpacing(renderItemParagraph(line, column: column)))
             } else {
-                result.append(renderLine(line, hangingPrefix: index < hangs.count ? hangs[index] : nil))
+                result.append(applyingBodyLineSpacing(
+                    renderLine(line, hangingPrefix: index < hangs.count ? hangs[index] : nil)))
             }
             result.append(AttributedString("\n"))
         }
@@ -531,8 +544,8 @@ struct MarkdownRenderer: Sendable {
     /// throughout, like an emphasis over all of it, and follows the same
     /// switch (`emphasisKeepsContentLook`); the one function for both:
     /// - on (1.15): each run keeps its look and gains bold at `size` — code
-    ///   stays monospaced on its chip at 13/14 of `size` (the body ratio), a
-    ///   footnote number at 11/14, italic stays italic, colours stay (a link
+    ///   stays monospaced on its chip at 13/16 of `size` (the body ratio), a
+    ///   footnote number at 11/16, italic stays italic, colours stay (a link
     ///   keeps the link colour);
     /// - off: everything in the bold body font at `size`, and in the text
     ///   colour when `recolors` (headings did, terms did not — before 1.15).
@@ -549,7 +562,7 @@ struct MarkdownRenderer: Sendable {
         for run in title.runs {
             var piece = AttributedString(title[run.range])
             let isCode = run[AttributeScopes.AppKitAttributes.BackgroundColorAttribute.self] != nil
-            let ratio: CGFloat = isCode ? 13.0 / 14.0 : run[FootnoteNumberAttribute.self] != nil ? 11.0 / 14.0 : 1
+            let ratio: CGFloat = isCode ? 13.0 / 16.0 : run[FootnoteNumberAttribute.self] != nil ? 11.0 / 16.0 : 1
             let italic = run[AttributeScopes.AppKitAttributes.FontAttribute.self]?
                 .fontDescriptor.symbolicTraits.contains(.italic) ?? false
             piece.setDualFont(size: size * ratio, bold: true, italic: italic, monospaced: isCode, fonts: theme.fonts)
@@ -602,7 +615,7 @@ struct MarkdownRenderer: Sendable {
                 // One line whatever the source's line breaks: the converter
                 // replaces the whole run, and every other consumer reads lines.
                 var source = AttributedString("$$" + latex.replacingOccurrences(of: "\n", with: " ") + "$$")
-                source.setDualFont(size: scaled(14), fonts: theme.fonts)
+                source.setDualFont(size: scaled(16), fonts: theme.fonts)
                 source.setDualForeground(theme.textColor)
                 source[DisplayMathAttribute.self] = latex
                 result.append(source)
@@ -611,7 +624,7 @@ struct MarkdownRenderer: Sendable {
                 result.append(AttributedString("\n"))
             }
         }
-        return result
+        return applyingBodyLineSpacing(result)
     }
 
     /// Whether the line right before `index` is a display formula (two in a
@@ -736,7 +749,7 @@ struct MarkdownRenderer: Sendable {
                                 hangingPrefix: String? = nil) -> AttributedString {
         let prefix = Self.indentSpaces(level) + (ordered ? "\(number). " : "• ")
         var attr = AttributedString(prefix)
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(theme.textColor)
         attr.append(renderInlineFormatting(text))
         // Ordered items of one list hang under the WIDEST marker of the list and
@@ -795,7 +808,7 @@ struct MarkdownRenderer: Sendable {
     private func renderItemParagraph(_ line: String, column: ListItemColumn) -> AttributedString {
         let spaces = Self.indentSpaces(column.level + 1)
         var attr = AttributedString(spaces)
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(theme.textColor)
         attr.append(renderInlineFormatting(Self.continuationText(line)))
         let lead = width(of: spaces)
@@ -807,7 +820,7 @@ struct MarkdownRenderer: Sendable {
     private func renderTaskItem(_ text: String, level: Int, checked: Bool) -> AttributedString {
         let prefix = Self.indentSpaces(level) + (checked ? "☑ " : "☐ ")
         var attr = AttributedString(prefix)
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(checked ? theme.checkboxColor : theme.textColor)
 
         var content = renderInlineFormatting(text)
@@ -854,7 +867,7 @@ struct MarkdownRenderer: Sendable {
     /// family with wider markers still hangs wrapped lines under the text.
     private func width(of string: String) -> CGFloat {
         (string as NSString)
-            .size(withAttributes: [.font: theme.fonts.appKit(size: scaled(14))])
+            .size(withAttributes: [.font: theme.fonts.appKit(size: scaled(16))])
             .width
     }
 
@@ -928,12 +941,12 @@ struct MarkdownRenderer: Sendable {
             // with the screen about how far apart the groups sit.
             if groupIndex > 0 {
                 var gap = AttributedString("\n")
-                gap.setDualFont(size: scaled(14), fonts: theme.fonts)
+                gap.setDualFont(size: scaled(16), fonts: theme.fonts)
                 result.append(gap)
             }
 
             for term in group.terms {
-                result.append(renderDefinitionTerm(term))
+                result.append(applyingBodyLineSpacing(renderDefinitionTerm(term)))
                 result.append(AttributedString("\n"))
             }
 
@@ -942,7 +955,7 @@ struct MarkdownRenderer: Sendable {
                 // definition's lazy continuation lines read as one flow; a hard
                 // break still starts a new — equally indented — line.
                 for line in Self.joinSoftBreaks(definition.components(separatedBy: "\n")) {
-                    result.append(renderDefinitionBody(line))
+                    result.append(applyingBodyLineSpacing(renderDefinitionBody(line)))
                     result.append(AttributedString("\n"))
                 }
             }
@@ -955,14 +968,14 @@ struct MarkdownRenderer: Sendable {
     private func renderDefinitionTerm(_ text: String) -> AttributedString {
         // Bold over the whole line (as for headings, `boldLook`) so the term
         // reads as a label; code keeps its face, colours and links stay.
-        boldLook(renderInlineFormatting(text), size: scaled(14), recolors: false)
+        boldLook(renderInlineFormatting(text), size: scaled(16), recolors: false)
     }
 
     /// One visual line of a definition body: the plain-text indent, the inline
     /// content, and the hanging indent for the NSTextView pipeline.
     private func renderDefinitionBody(_ text: String) -> AttributedString {
         var attr = AttributedString(Self.definitionPrintIndent)
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(theme.textColor)
         attr.append(renderInlineFormatting(text))
         applyHangingIndent(&attr, indent: scaled(Self.definitionIndent),
@@ -972,7 +985,7 @@ struct MarkdownRenderer: Sendable {
 
     private func renderHorizontalRule() -> AttributedString {
         var attr = AttributedString("────────────────────────────────")
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(theme.secondaryTextColor)
         attr[AttributeScopes.AppKitAttributes.ParagraphStyleAttribute.self] = Self.ruleParagraphStyle
         return attr
@@ -1139,7 +1152,7 @@ struct MarkdownRenderer: Sendable {
                          ..< utf8.index(utf8.startIndex, offsetBy: formula.contentEnd)]
         let delimiter = String(repeating: "$", count: formula.width)
         var attr = AttributedString(delimiter + latex + delimiter)
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(theme.textColor)
         attr[InlineFormulaAttribute.self] = InlineFormulaAttribute.Value(index: index, width: formula.width)
         return attr
@@ -1354,7 +1367,7 @@ struct MarkdownRenderer: Sendable {
             for email in emails + [decoded.endIndex..<decoded.endIndex] {
                 if start < email.lowerBound {
                     var attr = AttributedString(String(decoded[start..<email.lowerBound]))
-                    attr.setDualFont(size: scaled(14), bold: pendingStyle.bold, italic: pendingStyle.italic,
+                    attr.setDualFont(size: scaled(16), bold: pendingStyle.bold, italic: pendingStyle.italic,
                                      fonts: theme.fonts)
                     attr.setDualForeground(theme.textColor)
                     finish(&attr, pendingStyle, parse.links, linkInEmphasis)
@@ -1403,13 +1416,13 @@ struct MarkdownRenderer: Sendable {
         var monospaced = false
 
         /// Escapes, autolinks, e-mail links: the body font.
-        static let body = AtomFont(size: 14)
+        static let body = AtomFont(size: 16)
         /// `codeSpan`.
         static let code = AtomFont(size: 13, monospaced: true)
         /// `tryParseFootnoteRef`'s superscript number.
         static let footnoteNumber = AtomFont(size: 11, bold: true)
         /// `tryParseImage`'s "[Image: alt]" placeholder.
-        static let imagePlaceholder = AtomFont(size: 14, italic: true)
+        static let imagePlaceholder = AtomFont(size: 16, italic: true)
     }
 
     /// THE switch for what emphasis does to what it covers (decided for
@@ -1431,7 +1444,7 @@ struct MarkdownRenderer: Sendable {
     private func restyle(_ attr: inout AttributedString, _ font: AtomFont, _ style: InlineStyle) {
         guard style.bold || style.italic else { return }
         guard Self.emphasisKeepsContentLook else {
-            attr.setDualFont(size: scaled(14), bold: style.bold, italic: style.italic, fonts: theme.fonts)
+            attr.setDualFont(size: scaled(16), bold: style.bold, italic: style.italic, fonts: theme.fonts)
             attr.setDualForeground(theme.textColor)
             return
         }
@@ -1543,7 +1556,7 @@ struct MarkdownRenderer: Sendable {
                                                     pairs: pairs) else { return nil }
 
         var attr = AttributedString(image.alt.isEmpty ? "[Image]" : "[Image: \(decodedText(image.alt))]")
-        attr.setDualFont(size: scaled(14), italic: true, fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), italic: true, fonts: theme.fonts)
         attr.setDualForeground(theme.secondaryTextColor)
         // No link for an embedded `data:` image: clicking it would hand a
         // multi-megabyte URL to the "Open link?" alert.
@@ -1559,7 +1572,7 @@ struct MarkdownRenderer: Sendable {
         guard MarkdownTheme.escapableChars.contains(escaped) else { return nil }
 
         var attr = AttributedString(String(escaped))
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(theme.textColor)
         return (attr, remaining.dropFirst(2))
     }
@@ -1785,7 +1798,7 @@ struct MarkdownRenderer: Sendable {
     /// An autolink's look: body size, link colour, underlined.
     private func autolinkText(_ shown: String, url: URL?) -> AttributedString {
         var attr = AttributedString(shown)
-        attr.setDualFont(size: scaled(14), fonts: theme.fonts)
+        attr.setDualFont(size: scaled(16), fonts: theme.fonts)
         attr.setDualForeground(theme.linkColor)
         attr.setDualUnderline()
         if let url { attr.link = url }

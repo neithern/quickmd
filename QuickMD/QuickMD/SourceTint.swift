@@ -126,7 +126,7 @@ enum SourceTint {
             return .verbatim
         case .blockquote, .alert:
             return .quote
-        case .text, .table, .image, .imageRow:
+        case .text, .table, .htmlTable, .image, .imageRow:
             return nil
         }
     }

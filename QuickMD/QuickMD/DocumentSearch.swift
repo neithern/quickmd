@@ -245,6 +245,8 @@ enum DocumentSearch {
                 let count = searchMatchRanges(in: string, term: term).count
                 matches.append(contentsOf: repeatElement(block.id, count: count))
                 continue
+            case .htmlTable(let rows):
+                segments = rows.flatMap { $0 }.map(\.text).filter { !$0.isEmpty }
             case .codeBlock(let code, _):
                 segments = [code]
             case .image(_, let alt, _, _):
@@ -333,7 +335,7 @@ enum DocumentSearch {
             return shownWithFormulas(renderer.renderHeader(title, level: level)) {
                 BlockTextConverter.headingTitle($0, level: level, renderer: renderer, math: searchMathPlaceholder)
             }
-        case .table, .codeBlock, .image, .imageRow, .svgImage, .mathBlock, .mermaidDiagram:
+        case .table, .htmlTable, .codeBlock, .image, .imageRow, .svgImage, .mathBlock, .mermaidDiagram:
             return nil
         }
     }

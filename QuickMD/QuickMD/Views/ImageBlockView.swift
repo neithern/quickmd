@@ -26,6 +26,7 @@ struct ImageBlockView: View {
     let documentURL: URL?
     let fontScale: CGFloat
     let contentWidth: CGFloat
+    var showsCaption = true
     /// Where the image's size goes once it is known, so every later measure
     /// computes this row instead of starting it at the loading view.
     let heightCache: BlockHeightCache?
@@ -35,7 +36,8 @@ struct ImageBlockView: View {
 
     init(url: String, alt: String, width: ImageWidth? = nil, link: URL? = nil, theme: MarkdownTheme,
          documentURL: URL?, fontScale: CGFloat, contentWidth: CGFloat, heightCache: BlockHeightCache? = nil,
-         onEnlarge: @escaping (GraphicPreview) -> Void = { _ in }, onLink: @escaping (URL) -> Void = { _ in }) {
+         showsCaption: Bool = true, onEnlarge: @escaping (GraphicPreview) -> Void = { _ in },
+         onLink: @escaping (URL) -> Void = { _ in }) {
         self.url = url
         self.alt = alt
         self.width = width
@@ -44,6 +46,7 @@ struct ImageBlockView: View {
         self.documentURL = documentURL
         self.fontScale = fontScale
         self.contentWidth = contentWidth
+        self.showsCaption = showsCaption
         self.heightCache = heightCache
         self.onEnlarge = onEnlarge
         self.onLink = onLink
@@ -57,7 +60,7 @@ struct ImageBlockView: View {
                     fontScale: fontScale, contentWidth: contentWidth, heightCache: heightCache,
                     style: .block, onEnlarge: onEnlarge, onLink: onLink)
 
-        if !alt.isEmpty {
+        if showsCaption && !alt.isEmpty {
             ImageCaption(alt: alt, color: theme.secondaryTextColor, fontScale: fontScale,
                          contentWidth: contentWidth)
         }
@@ -340,7 +343,7 @@ struct PictureView: View {
         }
         .buttonStyle(.plain)
         .help("Click to enlarge image")
-        .accessibilityLabel(alt.isEmpty ? "Enlarge image" : "Enlarge image: \(alt)")
+        .accessibilityLabel(alt.isEmpty ? L("Enlarge image") : L("Enlarge image: %@", alt))
     }
 
     /// A linked picture: click = the link, as a text link (in-document
@@ -442,7 +445,7 @@ struct PictureView: View {
         Image(systemName: "lock.shield")
             .font(.system(size: 24))
             .foregroundColor(.secondary)
-        Text("Can\u{2019}t load \u{201C}\(fileURL.lastPathComponent)\u{201D}")
+        Text(L("Can\u{2019}t load \u{201C}%@\u{201D}", fileURL.lastPathComponent))
             .font(.system(size: 12, weight: .medium))
             .foregroundColor(.secondary)
     }
@@ -597,7 +600,7 @@ struct GraphicPreviewOverlay: View {
             case .image(let image, let title, let fileURL, let loadDetail):
                 VStack(spacing: 0) {
                     HStack {
-                        Text(title.isEmpty ? "Image" : title)
+                        Text(title.isEmpty ? L("Image") : title)
                             .lineLimit(1)
                             .foregroundColor(theme.textColor)
                         Spacer()

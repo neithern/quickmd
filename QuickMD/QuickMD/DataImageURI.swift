@@ -118,15 +118,15 @@ struct DataImageURI: Sendable {
     var displayLabel: String {
         let size = ByteCountFormatter.string(fromByteCount: Int64(estimatedDecodedByteCount),
                                              countStyle: .file)
-        guard isImage else { return "embedded non-image data, \(size)" }
+        guard isImage else { return L("embedded non-image data, %@", size) }
         let subtype = mediaType.dropFirst("image/".count)
             .split(separator: "+", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
         let allowed = Set("abcdefghijklmnopqrstuvwxyz0123456789.-")
         let clean = subtype.filter { allowed.contains($0) }
         guard !clean.isEmpty, clean.count <= 20, clean.count == subtype.count else {
-            return "embedded image, \(size)"
+            return L("embedded image, %@", size)
         }
-        return "embedded \(clean.uppercased()) image, \(size)"
+        return L("embedded %@ image, %@", clean.uppercased(), size)
     }
 
     /// Base64 encodes 3 bytes in 4 characters; percent-encoding is reported at
