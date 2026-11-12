@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "QuickMD: Debug (CLT, build + launch)",
+      "type": "lldb-dap",
+      "request": "launch",
+      "preLaunchTask": "QuickMD: Build Debug (CLT)",
+      "program": "${workspaceFolder}/.build/clt/Debug/QuickMD.app/Contents/MacOS/QuickMD",
+    //   "args": ["${file}"],
+      "cwd": "${workspaceFolder}",
+      "env": { "NSUnbufferedIO": "YES" }
+    }
+  ]
+}

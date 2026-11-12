@@ -202,6 +202,9 @@
 		A1B2C3D401000181 /* SourceEditLanding.swift in Sources (Tests) */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000180 /* SourceEditLanding.swift */; };
 		A1B2C3D401000182 /* SourceEditLandingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000181 /* SourceEditLandingTests.swift */; };
 		A1B2C3D4010000F0 /* HeadingLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000F0 /* HeadingLayoutTests.swift */; };
+		A1B2C3D401000320 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000320 /* L10n.swift */; };
+		A1B2C3D401000321 /* L10n.swift in Sources (Tests) */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000320 /* L10n.swift */; };
+		A1B2C3D401000322 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40300000A /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -358,6 +361,9 @@
 		A1B2C3D40000004D /* FileWatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcherTests.swift; sourceTree = "<group>"; };
 		A1B2C3D400000066 /* ChromeHoverState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeHoverState.swift; sourceTree = "<group>"; };
 		A1B2C3D400000067 /* ChromeHoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeHoverTests.swift; sourceTree = "<group>"; };
+		A1B2C3D400000320 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
+		A1B2C3D400000321 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A1B2C3D400000322 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -439,6 +445,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D400000001 /* QuickMDApp.swift */,
+				A1B2C3D400000320 /* L10n.swift */,
 				A1B2C3D400000002 /* MarkdownDocument.swift */,
 				A1B2C3D400000003 /* MarkdownView.swift */,
 				A1B2C3D400000004 /* MarkdownRenderer.swift */,
@@ -488,6 +495,7 @@
 				A1B2C3D403000004 /* Views */,
 				A1B2C3D403000005 /* SwiftMath */,
 				A1B2C3D403000007 /* Resources */,
+				A1B2C3D403000009 /* Localization */,
 				A1B2C3D400000009 /* TipJarManager.swift */,
 				A1B2C3D40000000A /* TipJarView.swift */,
 				A1B2C3D40000000C /* MarkdownExport.swift */,
@@ -584,6 +592,14 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		A1B2C3D403000009 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40300000A /* Localizable.strings */,
+			);
+			name = Localization;
+			sourceTree = "<group>";
+		};
 		A1B2C3D403000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -654,6 +670,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = A1B2C3D403000001;
 			productRefGroup = A1B2C3D403000003 /* Products */;
@@ -675,6 +692,7 @@
 				A1B2C3D401000032 /* mermaid.min.js in Resources */,
 				A1B2C3D401000033 /* mermaid-template.html in Resources */,
 				A1B2C3D401000034 /* mathFonts.bundle in Resources */,
+				A1B2C3D401000322 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -686,6 +704,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D401000001 /* QuickMDApp.swift in Sources */,
+				A1B2C3D401000320 /* L10n.swift in Sources */,
 				A1B2C3D401000002 /* MarkdownDocument.swift in Sources */,
 				A1B2C3D401000003 /* MarkdownView.swift in Sources */,
 				A1B2C3D401000004 /* MarkdownRenderer.swift in Sources */,
@@ -796,6 +815,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D40100003D /* ParserTests.swift in Sources */,
+				A1B2C3D401000321 /* L10n.swift in Sources (Tests) */,
 				A1B2C3D40100003E /* RendererTests.swift in Sources */,
 				A1B2C3D40100003F /* SectionExtractorTests.swift in Sources */,
 				A1B2C3D401000040 /* DocumentAndThemeTests.swift in Sources */,
@@ -888,6 +908,18 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXVariantGroup section */
+		A1B2C3D40300000A /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1B2C3D400000321 /* en */,
+				A1B2C3D400000322 /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
 		A1B2C3D407000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -943,7 +975,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1002,7 +1034,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -1105,7 +1137,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = pl.falami.studio.QuickMDTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1120,7 +1152,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = pl.falami.studio.QuickMDTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

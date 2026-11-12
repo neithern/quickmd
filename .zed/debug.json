@@ -1,0 +1,35 @@
+[
+  {
+    "label": "QuickMD: Debug (CLT, build + launch)",
+    "adapter": "Swift",
+    "request": "launch",
+    "build": "QuickMD: Build Debug (CLT)",
+    "program": "$ZED_WORKTREE_ROOT/.build/clt/Debug/QuickMD.app/Contents/MacOS/QuickMD",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": {
+      "NSUnbufferedIO": "YES"
+    }
+  },
+  {
+    "label": "QuickMD: Debug with current file (CLT, build + launch)",
+    "adapter": "Swift",
+    "request": "launch",
+    "build": "QuickMD: Build Debug (CLT)",
+    "program": "$ZED_WORKTREE_ROOT/.build/clt/Debug/QuickMD.app/Contents/MacOS/QuickMD",
+    "args": ["$ZED_WORKTREE_ROOT/README.md"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": {
+      "NSUnbufferedIO": "YES"
+    }
+  },
+  {
+    "label": "QuickMD: Launch built app (CLT, no build)",
+    "adapter": "Swift",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/.build/clt/Debug/QuickMD.app/Contents/MacOS/QuickMD",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": {
+      "NSUnbufferedIO": "YES"
+    }
+  }
+]
