@@ -94,6 +94,9 @@
 "Show" = "Show";
 "Contents Sidebar" = "Contents Sidebar";
 "Also in the sidebar's context menu." = "Also in the sidebar's context menu.";
+"Page" = "Page";
+"Maximum page width" = "Maximum page width";
+"Maximum page width 0 means no width limit." = "Maximum page width 0 means no width limit.";
 "Size" = "Size";
 "Body text" = "Body text";
 "Code" = "Code";

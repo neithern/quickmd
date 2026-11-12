@@ -93,6 +93,9 @@
 "Show" = "显示";
 "Contents Sidebar" = "目录边栏";
 "Also in the sidebar's context menu." = "也可在边栏的上下文菜单中设置。";
+"Page" = "页面";
+"Maximum page width" = "最大页宽";
+"Maximum page width 0 means no width limit." = "设为0时不限制页宽";
 "Size" = "大小";
 "Body text" = "正文";
 "Code" = "代码";

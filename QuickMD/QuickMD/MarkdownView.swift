@@ -91,6 +91,8 @@ struct MarkdownView: View {
     /// families are baked into the AttributedStrings at parse time.
     @AppStorage(DocumentFonts.bodyDefaultsKey) private var bodyFontFamily: String = ""
     @AppStorage(DocumentFonts.codeDefaultsKey) private var codeFontFamily: String = ""
+    @AppStorage(BlockLayout.Document.maximumPageWidthDefaultsKey)
+    private var maximumPageWidth = BlockLayout.Document.defaultMaximumPageWidth
     /// Settings ▸ Fonts ▸ Default zoom (#48), raw as stored; read it through
     /// `defaultZoom`, which normalizes whatever `defaults write` left there.
     @AppStorage(DefaultZoom.defaultsKey) private var defaultZoomSetting: Double = 1.0
@@ -117,8 +119,8 @@ struct MarkdownView: View {
     @State private var appliedDefaultZoom: Double
     /// ⌘⇧R — distraction-free reading: both sidebars, the top-right chrome pills
     /// and the Support/Tip Jar button step out of the way, and the text column
-    /// stops at `Metrics.readingColumnCap(fontScale:)` (720 pt at 100 %, scaled
-    /// with the zoom) and centres itself.
+    /// stops at the zoom-scaled reading width, up to the 960 pt document cap,
+    /// and centres itself.
     ///
     /// @State, not @AppStorage, for the same reason as `fontScale`: it belongs to
     /// this window and this reading session. A viewer that reopens with its
@@ -291,7 +293,9 @@ struct MarkdownView: View {
                     focusedBlockId: focusedBlockId,
                     focusedOccInBlock: focusedOccInBlock,
                     scrollRequest: scrollRequest,
-                    layoutStyle: isReadingMode ? .reading(fontScale: CGFloat(renderedFontScale)) : .standard,
+                    layoutStyle: isReadingMode
+                        ? .reading(fontScale: CGFloat(renderedFontScale), maximumPageWidth: maximumPageWidth)
+                        : .standard(maximumPageWidth: maximumPageWidth),
                     contentWidth: $contentWidth,
                     onHeightReport: { blockId, row, height in
                         applyHeightReport(blockId: blockId, row: row, height: height)
@@ -647,7 +651,8 @@ struct MarkdownView: View {
             let listWidth = contentWidth
             let width = BlockLayout.Document.parseWidth(
                 contentWidth: listWidth, inner: documentColumn.innerWidth?() ?? 0,
-                readingFontScale: isReadingMode && Double(scale) != renderedFontScale ? scale : nil)
+                readingFontScale: isReadingMode && Double(scale) != renderedFontScale ? scale : nil,
+                maximumPageWidth: maximumPageWidth)
             // Keyed by the link, so valid across this re-parse.
             let imageSizes = heightCache.imageSizesSnapshot
             let out: ParsedAndMeasured = await Task.detached(priority: .userInitiated) {
