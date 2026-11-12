@@ -139,19 +139,19 @@ final class SourceEditSession: ObservableObject {
         var message: String {
             switch self {
             case .alreadyEditing:
-                return "Already editing the source."
+                return L("Already editing the source.")
             case .noFile:
-                return "This document has no file to edit."
+                return L("This document has no file to edit.")
             case .missing(let name):
-                return "“\(name)” no longer exists."
+                return L("“%@” no longer exists.", name)
             case .unreadable(let name):
-                return "“\(name)” could not be read."
+                return L("“%@” could not be read.", name)
             case .tooLarge(let name):
-                return "“\(name)” is too large to edit here (the limit is 2 MB)."
+                return L("“%@” is too large to edit here (the limit is 2 MB).", name)
             case .readOnly(let name):
-                return "“\(name)” is read-only."
+                return L("“%@” is read-only.", name)
             case .unsafe(let name):
-                return "“\(name)” can’t be edited safely: saving would change parts of the file you did not edit."
+                return L("“%@” can’t be edited safely: saving would change parts of the file you did not edit.", name)
             }
         }
     }
@@ -219,7 +219,7 @@ final class SourceEditSession: ObservableObject {
     }
 
     private var fileName: String {
-        environment.documentURL?.lastPathComponent ?? "Untitled"
+        environment.documentURL?.lastPathComponent ?? L("Untitled")
     }
 
     private var window: NSWindow? {
@@ -552,8 +552,9 @@ final class SourceEditSession: ObservableObject {
         hasMixedLineEndings = false
         commit(text)
         syncDirtyWithBuffer()
-        environment.toast(unified ? "Saved · line endings unified to \(Self.displayName(of: target.lineEnding))"
-                                  : "Saved")
+        environment.toast(unified
+            ? L("Saved · line endings unified to %@", Self.displayName(of: target.lineEnding))
+            : L("Saved"))
     }
 
     /// The disk differs from `baseBytes` (seen by the save check): keep the
@@ -570,10 +571,10 @@ final class SourceEditSession: ObservableObject {
     private func writeCopy(_ data: Data, to destination: URL) -> Bool {
         do {
             try data.write(to: destination)
-            environment.toast("Copy saved")
+            environment.toast(L("Copy saved"))
             return true
         } catch {
-            environment.toast("The copy could not be saved: \(error.localizedDescription)")
+            environment.toast(L("The copy could not be saved: %@", error.localizedDescription))
             return false
         }
     }
@@ -581,7 +582,7 @@ final class SourceEditSession: ObservableObject {
     static func copyName(for url: URL) -> String {
         let base = url.deletingPathExtension().lastPathComponent
         let ext = url.pathExtension
-        return ext.isEmpty ? "\(base) copy" : "\(base) copy.\(ext)"
+        return ext.isEmpty ? L("%@ copy", base) : L("%@ copy.%@", base, ext)
     }
 
     static func displayName(of encoding: DocumentFileFormat.Encoding) -> String {
@@ -899,8 +900,8 @@ extension SourceEditSession.Prompts {
             alert.messageText = localized?.errorDescription ?? error.localizedDescription
             alert.informativeText = [localized?.failureReason, localized?.recoverySuggestion]
                 .compactMap { $0 }.joined(separator: "\n\n")
-            addButton(to: alert, "Save a Copy…", identifier: saveFailedCopyIdentifier)
-            addButton(to: alert, "OK", identifier: saveFailedOKIdentifier, key: "\u{1b}")
+            addButton(to: alert, L("Save a Copy…"), identifier: saveFailedCopyIdentifier)
+            addButton(to: alert, L("OK"), identifier: saveFailedOKIdentifier, key: "\u{1b}")
             run(alert, on: window) { completion($0 == .alertFirstButtonReturn ? .saveCopy : .ok) }
         },
         copyDestination: { window, suggestedName, directory, completion in
@@ -922,14 +923,13 @@ extension SourceEditSession.Prompts {
     static func makeConflictAlert(fileName: String) -> NSAlert {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "“\(fileName)” has been changed by another application."
-        alert.informativeText = "Save Anyway replaces the other version with yours. Load Disk Version "
-            + "shows the file as it is on disk; Undo brings your text back."
+        alert.messageText = L("“%@” has been changed by another application.", fileName)
+        alert.informativeText = L("Save Anyway replaces the other version with yours. Load Disk Version shows the file as it is on disk; Undo brings your text back.")
         // No default button: Return must not overwrite another application's
         // changes on reflex. Escape cancels.
-        addButton(to: alert, "Save Anyway", identifier: conflictSaveAnywayIdentifier, key: "")
-        addButton(to: alert, "Load Disk Version", identifier: conflictLoadDiskIdentifier)
-        addButton(to: alert, "Cancel", identifier: conflictCancelIdentifier, key: "\u{1b}")
+        addButton(to: alert, L("Save Anyway"), identifier: conflictSaveAnywayIdentifier, key: "")
+        addButton(to: alert, L("Load Disk Version"), identifier: conflictLoadDiskIdentifier)
+        addButton(to: alert, L("Cancel"), identifier: conflictCancelIdentifier, key: "\u{1b}")
         return alert
     }
 
@@ -939,10 +939,11 @@ extension SourceEditSession.Prompts {
     static func makeEncodingAlert(fileName: String, encodingName: String) -> NSAlert {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "“\(fileName)” uses \(encodingName), which cannot store some of the characters you typed."
-        alert.informativeText = "Saving as UTF-8 keeps every character you typed."
-        addButton(to: alert, "Save as UTF-8", identifier: encodingUTF8Identifier)
-        addButton(to: alert, "Cancel", identifier: encodingCancelIdentifier, key: "\u{1b}")
+        alert.messageText = L("“%@” uses %@, which cannot store some of the characters you typed.",
+                              fileName, encodingName)
+        alert.informativeText = L("Saving as UTF-8 keeps every character you typed.")
+        addButton(to: alert, L("Save as UTF-8"), identifier: encodingUTF8Identifier)
+        addButton(to: alert, L("Cancel"), identifier: encodingCancelIdentifier, key: "\u{1b}")
         return alert
     }
 
@@ -960,7 +961,7 @@ extension SourceEditSession.Prompts {
 
     private static func copyPanel(suggestedName: String, directory: URL?) -> NSSavePanel {
         let panel = NSSavePanel()
-        panel.title = "Save a Copy"
+        panel.title = L("Save a Copy")
         panel.nameFieldStringValue = suggestedName
         panel.directoryURL = directory
         panel.canCreateDirectories = true

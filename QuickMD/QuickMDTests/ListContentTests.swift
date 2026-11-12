@@ -206,14 +206,18 @@ final class ListContentTests: XCTestCase {
     func testAParagraphAtTheMarginEndsTheList() throws {
         let blocks = parse("1. Step one\n\n   ```\n   code in item\n   ```\n\nParagraph that ends the list.\n\n2. Step two")
         XCTAssertEqual(shape(blocks)[2], "T:Paragraph that ends the list.")
-        XCTAssertNil(try paragraphs(blocks[2]).first?.style)
+        let paragraphStyle = try XCTUnwrap(paragraphs(blocks[2]).first?.style)
+        XCTAssertEqual(paragraphStyle.headIndent, 0)
+        XCTAssertEqual(paragraphStyle.lineSpacing, 6)
         XCTAssertGreaterThan(blocks[1].listIndent, 0)
 
         // After the code, an unindented line is not lazy: the list is over.
         // GitHub: `…</li></ol><p>not indented after code<br>2. Next</p>`
         let lazy = parse("1. Step\n\n   ```\n   code\n   ```\nnot indented after code\n2. Next")
         XCTAssertEqual(shape(lazy).last, "T:not indented after code 2. Next")
-        XCTAssertNil(try paragraphs(lazy[2]).first?.style)
+        let lazyStyle = try XCTUnwrap(paragraphs(lazy[2]).first?.style)
+        XCTAssertEqual(lazyStyle.headIndent, 0)
+        XCTAssertEqual(lazyStyle.lineSpacing, 6)
     }
 
     // MARK: - Paragraphs of an item
@@ -231,7 +235,7 @@ final class ListContentTests: XCTestCase {
         let itemX = try itemTextX(blocks[0])
         let style = try XCTUnwrap(paragraph.style)
         XCTAssertEqual(style.headIndent, itemX, accuracy: 0.01)
-        let spaces = ("    " as NSString).size(withAttributes: [.font: theme.fonts.appKit(size: 14)]).width
+        let spaces = ("    " as NSString).size(withAttributes: [.font: theme.fonts.appKit(size: 16)]).width
         XCTAssertEqual(style.firstLineHeadIndent + spaces, itemX, accuracy: 0.01)
 
         // The text is laid out at the item's x: the first glyph of the words.
@@ -255,7 +259,9 @@ final class ListContentTests: XCTestCase {
     /// A paragraph outside any list is untouched.
     func testAParagraphOutsideAListHasNoItemColumn() throws {
         let blocks = parse("Intro.\n\n  indented paragraph\n\n- item")
-        XCTAssertNil(try paragraphs(blocks[1]).first?.style)
+        let style = try XCTUnwrap(paragraphs(blocks[1]).first?.style)
+        XCTAssertEqual(style.headIndent, 0)
+        XCTAssertEqual(style.lineSpacing, 6)
         XCTAssertEqual(try paragraphs(blocks[1]).first?.text, "  indented paragraph")
     }
 
@@ -431,7 +437,7 @@ final class ListContentTests: XCTestCase {
     /// style): the code lines up with the item's characters there.
     func testPrintedIndentLeavesTheGutterOut() throws {
         let blocks = MarkdownBlockParser(colorScheme: .light).parse("1. Step\n\n       code")
-        let prefix = ("1. " as NSString).size(withAttributes: [.font: MarkdownTheme.exportTheme(for: .light).fonts.appKit(size: 14)]).width
+        let prefix = ("1. " as NSString).size(withAttributes: [.font: MarkdownTheme.exportTheme(for: .light).fonts.appKit(size: 16)]).width
         XCTAssertEqual(MarkdownRenderer.printedListIndent(blocks[1].listIndent), prefix, accuracy: 0.01)
         XCTAssertEqual(MarkdownRenderer.printedListIndent(0), 0)
     }

@@ -586,12 +586,15 @@ enum DocumentClipboard {
             formatter.string(from: NSNumber(value: value)) ?? String(value)
         }
         let characters = plain.count
-        var text = "Copied \(format(characters)) " + (characters == 1 ? "character" : "characters")
+        let charactersText = format(characters)
+        if characters == 1 {
+            return L("Copied %@ character", charactersText)
+        }
         let words = plain.split(whereSeparator: { $0.isWhitespace }).count
         if words >= 2 {
-            text += " \u{00B7} \(format(words)) words"
+            return L("Copied %@ characters · %@ words", charactersText, format(words))
         }
-        return text
+        return L("Copied %@ characters", charactersText)
     }
 }
 

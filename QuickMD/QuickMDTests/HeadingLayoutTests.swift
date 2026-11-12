@@ -114,7 +114,7 @@ final class HeadingLayoutTests: XCTestCase {
                             }
                             let isCode = ns.attribute(.backgroundColor, at: index, effectiveRange: nil) != nil
                             let traits = font.fontDescriptor.symbolicTraits
-                            XCTAssertEqual(font.pointSize, expectedSize * (isCode ? 13.0 / 14.0 : 1), accuracy: 0.01, context)
+                            XCTAssertEqual(font.pointSize, expectedSize * (isCode ? 13.0 / 16.0 : 1), accuracy: 0.01, context)
                             XCTAssertEqual(traits.contains(.monoSpace), isCode, "\(context): face at \(index)")
                             if !isCode && !traits.contains(.italic) {
                                 XCTAssertEqual(font, headerFont, "\(context): font at \(index)")

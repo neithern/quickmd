@@ -1,0 +1,278 @@
+/*
+  Localizable.strings — 简体中文 (zh-Hans)
+  QuickMD
+
+  键是英文源文本，必须与 Swift 中的字面量逐字节一致（包括 “弯引号”、… 和 —），
+  否则查找会静默回退到英文。
+
+  占位符：%@ = 字符串，%lld = 整数，%% = 百分号本身。
+  修改后运行：scripts/check-localizations.py
+*/
+
+/* ===== App 与菜单 ===== */
+"Close" = "关闭";
+"QuickMD Help" = "简阅帮助";
+"Visit qmd.app" = "访问 qmd.app";
+"Support QuickMD ☕" = "支持简阅 ☕";
+"Buy Me a Coffee" = "请我喝杯咖啡";
+"Ko-fi" = "Ko-fi";
+"Tip Jar" = "打赏";
+"Tip Jar 💝" = "打赏 💝";
+"Bigger" = "放大";
+"Smaller" = "缩小";
+"Actual Size" = "实际大小";
+"Exit Reading Mode" = "退出阅读模式";
+"Reading Mode" = "阅读模式";
+"Reading Mode (Esc to exit)" = "阅读模式（按 Esc 退出）";
+"Table of Contents" = "目录";
+"Recent Documents" = "最近使用的文档";
+"Done Editing" = "完成编辑";
+"Edit Source" = "编辑源文件";
+"Save" = "存储";
+"Discard Changes" = "放弃更改";
+"Copy Markdown" = "拷贝 Markdown";
+"Reload" = "重新载入";
+"Open in External Editor" = "在外置编辑器中打开";
+"Find..." = "查找…";
+"Update Available — v%@" = "有可用更新 — v%@";
+"Check for Updates…" = "检查更新…";
+"Update check failed — try again later" = "更新检查失败 — 请稍后重试";
+"You're up to date (v%@)" = "已是最新版本（v%@）";
+
+/* ===== 文档浮层控件 ===== */
+"Reset zoom" = "重置缩放";
+"Reset zoom to %@ (⌘0)" = "将缩放重置为 %@ (⌘0)";
+"Copy source" = "拷贝源文件";
+"Reload from disk (⌘R)" = "从磁盘重新载入 (⌘R)";
+"Edit" = "编辑";
+"Side by Side" = "并排显示";
+"Editor Only" = "仅编辑器";
+"Edit Side by Side" = "并排编辑";
+"Edit source (⌥⌘E)" = "编辑源文件 (⌥⌘E)";
+"Edit source (⌥⌘E) · Option-click to edit side by side (⌥⇧⌘E)" = "编辑源文件 (⌥⌘E) · 按住 Option 键点按以并排编辑 (⌥⇧⌘E)";
+"Show the editor only (⌥⇧⌘E)" = "仅显示编辑器 (⌥⇧⌘E)";
+"Show the rendered document beside the editor (⌥⇧⌘E)" = "在编辑器旁显示渲染后的文档 (⌥⇧⌘E)";
+"Save (⌘S)" = "存储 (⌘S)";
+"Done" = "完成";
+"Done editing (Esc)" = "完成编辑 (Esc)";
+"Support" = "支持";
+"Support QuickMD development" = "支持简阅 的开发";
+"Back" = "后退";
+"Forward" = "前进";
+"Copy section" = "拷贝章节";
+"Copy code" = "拷贝代码";
+"Show recent documents (⇧⌘D)" = "显示最近使用的文档 (⇧⌘D)";
+"Hide recent documents (⇧⌘D)" = "隐藏最近使用的文档 (⇧⌘D)";
+"Hide recent documents" = "隐藏最近使用的文档";
+"Clear list" = "清空列表";
+"Remove from list" = "从列表中移除";
+
+/* ===== 搜索 ===== */
+"Search..." = "搜索…";
+"0 results" = "无结果";
+"Previous match" = "上一个匹配项";
+"Next match" = "下一个匹配项";
+"Close search (Esc)" = "关闭搜索 (Esc)";
+
+/* ===== 边栏 ===== */
+"Documents" = "文档";
+"No documents opened yet" = "尚未打开任何文档";
+"Contents" = "目录";
+"Hide table of contents (⇧⌘T)" = "隐藏目录 (⇧⌘T)";
+"Hide table of contents" = "隐藏目录";
+"No headings up to H%lld" = "没有 H%lld 或更浅层级的标题";
+"Show All Headings" = "显示所有标题";
+"Show Headings" = "显示标题";
+"All Headings" = "所有标题";
+"Up to H2" = "最多 H2";
+"Up to H3" = "最多 H3";
+"Up to H4" = "最多 H4";
+
+/* ===== 设置 ===== */
+"General" = "通用";
+"Themes" = "主题";
+"Fonts" = "字体";
+"Editor" = "编辑器";
+"Copy selected text automatically" = "自动拷贝所选文本";
+"Selection" = "选择";
+"Selected text is copied to the clipboard as soon as you finish selecting. Off by default because it replaces whatever you copied in another app." = "选择完成后，所选文本会立即拷贝到剪贴板。此功能默认关闭，因为它会覆盖你在其他 App 中拷贝的内容。";
+"Show" = "显示";
+"Contents Sidebar" = "目录边栏";
+"Also in the sidebar's context menu." = "也可在边栏的上下文菜单中设置。";
+"Page" = "页面";
+"Maximum page width" = "最大页宽";
+"Maximum page width 0 means no width limit." = "设为0时不限制页宽";
+"Size" = "大小";
+"Body text" = "正文";
+"Code" = "代码";
+"System (San Francisco)" = "系统（San Francisco）";
+"System (SF Mono)" = "系统（SF Mono）";
+"Default zoom" = "默认缩放";
+"Documents open at this size. ⌘+ and ⌘− zoom one window; ⌘0 returns to this size. Print and PDF export always use 100%." = "文档以此大小打开。⌘+ 和 ⌘− 缩放当前窗口；⌘0 返回此大小。打印和 PDF 导出始终使用 100%。";
+"Applies to the document, print and PDF export — the app's own controls keep the system font. A custom theme can override these with bodyFontFamily / codeFontFamily in its JSON." = "应用于文档、打印和 PDF 导出 — App 自身的控件仍使用系统字体。自定义主题可通过 JSON 中的 bodyFontFamily / codeFontFamily 覆盖这些设置。";
+"%@ (not installed)" = "%@（未安装）";
+"Theme" = "主题";
+"Built-in" = "内置";
+"Custom theme" = "自定义主题";
+"Custom" = "自定义";
+"Auto" = "自动";
+"Import Theme…" = "导入主题…";
+"Open Themes Folder" = "打开主题文件夹";
+"Choose one or more QuickMD theme JSON files to import." = "选择一个或多个 QuickMD 主题 JSON 文件进行导入。";
+"Import" = "导入";
+"External editor" = "外置编辑器";
+"System Default" = "系统默认";
+"Open in External Editor (⌘E)" = "在外置编辑器中打开 (⌘E)";
+"Tip: enable auto-save in your editor and QuickMD becomes a live preview — it reloads automatically whenever the file changes on disk." = "提示：在编辑器中开启自动存储，QuickMD 就会成为实时预览 — 文件在磁盘上变化时会自动重新载入。";
+"Other…" = "其他…";
+
+/* ===== 图片与图表 ===== */
+"Click to enlarge image" = "点按以放大图片";
+"Enlarge image" = "放大图片";
+"Enlarge image: %@" = "放大图片：%@";
+"Enlarge SVG image" = "放大 SVG 图片";
+"SVG could not be decoded" = "无法解码 SVG";
+"Enlarge diagram" = "放大图表";
+"Click to enlarge diagram" = "点按以放大图表";
+"Zoom diagram" = "缩放图表";
+"Zoom out" = "缩小";
+"Fit diagram to window" = "使图表适合窗口";
+"Zoom in" = "放大";
+"Mermaid Diagram" = "Mermaid 图表";
+"Can’t load “%@”" = "无法载入“%@”";
+"Grant Folder Access" = "授予文件夹访问权限";
+"Image" = "图片";
+
+/* ===== 文档状态 ===== */
+"Parsing…" = "正在解析…";
+"Rendering…" = "正在渲染…";
+"This file changed on disk while you were editing." = "编辑期间此文件已在磁盘上更改。";
+"Keep My Version" = "保留我的版本";
+"Load Disk Version" = "载入磁盘版本";
+"Close Tab" = "关闭标签页";
+"Reloaded" = "已重新载入";
+"Reloaded · no changes" = "已重新载入 · 无更改";
+"Couldn't read the file" = "无法读取文件";
+"Zoom %lld%%" = "缩放 %lld%%";
+"Open “%@:” link?" = "打开“%@:”链接？";
+"This link opens another application:\n%@" = "此链接将打开另一个 App：\n%@";
+"Open" = "打开";
+"Cancel" = "取消";
+
+/* ===== 拷贝摘要 ===== */
+"Copied %@ character" = "已拷贝 %@ 个字符";
+"Copied %@ characters" = "已拷贝 %@ 个字符";
+"Copied %@ characters · %@ words" = "已拷贝 %@ 个字符 · %@ 个词";
+
+/* ===== 文件监视 ===== */
+"this location" = "此位置";
+"File no longer exists at %@" = "文件已不存在：%@";
+"File can’t be read at %@" = "无法读取文件：%@";
+
+/* ===== 源文件编辑 ===== */
+"Already editing the source." = "已在编辑源文件。";
+"This document has no file to edit." = "此文档没有可编辑的文件。";
+"“%@” no longer exists." = "“%@”已不存在。";
+"“%@” could not be read." = "无法读取“%@”。";
+"“%@” is too large to edit here (the limit is 2 MB)." = "“%@”过大，无法在此编辑（上限为 2 MB）。";
+"“%@” is read-only." = "“%@”是只读的。";
+"“%@” can’t be edited safely: saving would change parts of the file you did not edit." = "无法安全编辑“%@”：存储会更改文件中你未编辑的部分。";
+"Untitled" = "未命名";
+"Saved" = "已存储";
+"Saved · line endings unified to %@" = "已存储 · 换行符已统一为 %@";
+"Copy saved" = "副本已存储";
+"The copy could not be saved: %@" = "无法存储副本：%@";
+"%@ copy" = "%@ 副本";
+"%@ copy.%@" = "%@ 副本.%@";
+"“%@” has been changed by another application." = "“%@”已被另一个 App 更改。";
+"Save Anyway replaces the other version with yours. Load Disk Version shows the file as it is on disk; Undo brings your text back." = "“仍要存储”会用你的版本替换另一个版本。“载入磁盘版本”会显示磁盘上的文件内容；撤销可恢复你的文本。";
+"Save Anyway" = "仍要存储";
+"Save as UTF-8" = "存储为 UTF-8";
+"“%@” uses %@, which cannot store some of the characters you typed." = "“%@”使用 %@，无法存储你输入的某些字符。";
+"Saving as UTF-8 keeps every character you typed." = "以 UTF-8 存储会保留你输入的每个字符。";
+"Save a Copy…" = "存储副本…";
+"OK" = "好";
+"Save a Copy" = "存储副本";
+"Do you want to save the changes you made to “%@”?" = "要存储对“%@”所做的更改吗？";
+"Your changes will be lost if you don’t save them." = "如果不存储，你的更改将丢失。";
+"Don’t Save" = "不存储";
+
+/* ===== 外置编辑器 ===== */
+"⌘E opens the document at the line you are reading (%@)." = "⌘E 会在你正在阅读的行处打开文档（%@）。";
+"Opened in %@ at line %lld" = "已在 %@ 中打开，位于第 %lld 行";
+"Opened in %@" = "已在 %@ 中打开";
+"Choose Your External Editor" = "选择外置编辑器";
+"QuickMD will open documents in this app when you press ⌘E.\nYou can change it anytime in Settings → Editor." = "按下 ⌘E 时，QuickMD 将在此 App 中打开文档。\n你可以随时在“设置” → “编辑器”中更改。";
+"Use This Editor" = "使用此编辑器";
+"Choose the application ⌘E should open documents in." = "选择按下 ⌘E 时用于打开文档的 App。";
+"Select" = "选择";
+
+/* ===== 文件夹访问 ===== */
+"Grant Access" = "授予访问权限";
+"QuickMD needs access to this folder to display local images and open linked files. This is a one-time prompt per folder." = "QuickMD 需要访问此文件夹才能显示本地图片和打开链接文件。每个文件夹仅会提示一次。";
+
+/* ===== 自定义主题 ===== */
+"Import failed: %@" = "导入失败：%@";
+"theme name “%@” collides with a built-in theme — rename it" = "主题名称“%@”与内置主题冲突 — 请重命名";
+"invalid hex color (expected 6 or 8 hex digits) in: %@" = "以下字段的十六进制颜色无效（应为 6 或 8 位十六进制数字）：%@";
+"font not installed, using the system font instead: %@" = "字体未安装，将改用系统字体：%@";
+
+/* ===== 存储文件 ===== */
+"“%@” is not a regular file and cannot be saved in place." = "“%@”不是常规文件，无法原地存储。";
+"“%@” could not be saved." = "无法存储“%@”。";
+"“%@” could not be saved: the file did not contain the saved text when read back." = "无法存储“%@”：重新读取时，文件中不包含已存储的文本。";
+"Save a copy to keep your changes." = "请存储副本以保留更改。";
+"Change its permissions in the Finder, or save a copy." = "请在访达中更改其权限，或存储副本。";
+"The file was not changed. Your edits are still in the editor." = "文件未更改。你的编辑仍在编辑器中。";
+"The file's previous content was restored. Your edits are still in the editor." = "文件之前的内容已恢复。你的编辑仍在编辑器中。";
+"The file's previous content could not be restored, so it may be damaged. Your edits are still in the editor — save a copy." = "无法恢复文件之前的内容，文件可能已损坏。你的编辑仍在编辑器中 — 请存储副本。";
+
+/* ===== 图片占位符 ===== */
+"Image: %@" = "图片：%@";
+"Embedded image too large (%@)" = "内嵌图片过大（%@）";
+"Embedded image could not be shown (%@)" = "无法显示内嵌图片（%@）";
+"Embedded image could not be shown" = "无法显示内嵌图片";
+"embedded non-image data, %@" = "内嵌非图片数据，%@";
+"embedded image, %@" = "内嵌图片，%@";
+"embedded %@ image, %@" = "内嵌 %@ 图片，%@";
+
+/* ===== PDF 导出与打印 ===== */
+"No document content to export" = "没有可导出的文档内容";
+"Export as PDF" = "导出为 PDF";
+"Choose a location to save the PDF" = "选择 PDF 的存储位置";
+"Failed to generate PDF" = "无法生成 PDF";
+"Failed to save PDF: %@" = "无法存储 PDF：%@";
+"Export Error" = "导出错误";
+"Failed to render document for printing" = "无法渲染要打印的文档";
+"Failed to create PDF for printing" = "无法创建用于打印的 PDF";
+"Failed to create print operation" = "无法创建打印操作";
+"Print Error" = "打印错误";
+"Export as PDF…" = "导出为 PDF…";
+"Print…" = "打印…";
+
+/* ===== 打赏 ===== */
+"Support QuickMD" = "支持简阅";
+"QuickMD is free and always will be. If you find it useful, consider leaving a tip!" = "简阅将永远免费。如果它对你有帮助，欢迎打赏！";
+"Loading..." = "正在载入…";
+"Unable to load tip options" = "无法载入打赏选项";
+"Try Again" = "重试";
+"Processing..." = "正在处理…";
+"Thank you for your support!" = "感谢你的支持！";
+"Tips are one-time purchases. Thank you!" = "打赏为一次性购买。谢谢！";
+"Small Tip" = "小额打赏";
+"Medium Tip" = "中额打赏";
+"Large Tip" = "大额打赏";
+"Verification failed: %@" = "验证失败：%@";
+
+/* ===== 上下文菜单与撤销 ===== */
+"Copy" = "拷贝";
+"Select All" = "全选";
+"Look Up “%@”" = "查询“%@”";
+"Paste" = "粘贴";
+
+/* ===== GFM 提示块标题 ===== */
+"Note" = "注意";
+"Tip" = "提示";
+"Important" = "重要";
+"Warning" = "警告";
+"Caution" = "谨慎";

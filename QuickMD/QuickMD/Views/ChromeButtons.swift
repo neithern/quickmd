@@ -278,7 +278,7 @@ struct ChromePillLabel<Icon: View>: View {
         }
         .padding(.horizontal, expanded ? 10 : 6)
         .padding(.vertical, 4)
-        .background(theme.codeBackgroundColor.opacity(expanded ? 0.9 : 0.6))
+        .glassEffect(.regular, in: Capsule())
         .clipShape(Capsule())
         .contentShape(Capsule())
         .foregroundColor(tint)
@@ -354,8 +354,8 @@ struct ZoomResetButton: View {
     private var percentText: String { DefaultZoom.title(for: fontScale) }
 
     var body: some View {
-        ChromePill(theme: theme, title: "Reset zoom",
-                   help: "Reset zoom to \(DefaultZoom.title(for: defaultScale)) (⌘0)", action: action) {
+        ChromePill(theme: theme, title: L("Reset zoom"),
+                   help: L("Reset zoom to %@ (⌘0)", DefaultZoom.title(for: defaultScale)), action: action) {
             Text(percentText)
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
         }
@@ -371,9 +371,36 @@ struct CopySourceButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Copy source", help: "Copy source", action: action) {
+        ChromePill(theme: theme, title: L("Copy source"), help: L("Copy source"), action: action) {
             Image(systemName: "doc.on.doc")
                 .font(.system(size: 11))
+        }
+    }
+}
+
+struct DocumentTabNavigationButtons: View {
+    let theme: MarkdownTheme
+    @ObservedObject private var navigation = DocumentTabNavigation.shared
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ChromePill(theme: theme, title: L("Back"),
+                       help: L("Back"),
+                       tint: .secondary.opacity(navigation.canGoBack ? 1 : 0.4),
+                       action: navigation.goBack) {
+                Image(systemName: "chevron.backward")
+                    .font(.system(size: 11))
+            }
+            .disabled(!navigation.canGoBack)
+
+            ChromePill(theme: theme, title: L("Forward"),
+                       help: L("Forward"),
+                       tint: .secondary.opacity(navigation.canGoForward ? 1 : 0.4),
+                       action: navigation.goForward) {
+                Image(systemName: "chevron.forward")
+                    .font(.system(size: 11))
+            }
+            .disabled(!navigation.canGoForward)
         }
     }
 }
@@ -386,7 +413,7 @@ struct ReloadDocumentButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Reload", help: "Reload from disk (⌘R)", action: action) {
+        ChromePill(theme: theme, title: L("Reload"), help: L("Reload from disk (⌘R)"), action: action) {
             Image(systemName: "arrow.clockwise")
                 .font(.system(size: 11))
         }
@@ -424,8 +451,8 @@ struct EditSourceButton: View {
     var body: some View {
         ChromePill(
             theme: theme,
-            title: isOptionDown ? "Side by Side" : "Edit",
-            help: "Edit source (⌥⌘E) · Option-click to edit side by side (⌥⇧⌘E)",
+            title: isOptionDown ? L("Side by Side") : L("Edit"),
+            help: L("Edit source (⌥⌘E) · Option-click to edit side by side (⌥⇧⌘E)"),
             action: {
                 // The flags at the click, not the last flagsChanged seen.
                 NSEvent.modifierFlags.contains(.option) ? sideBySideAction() : action()
@@ -478,7 +505,7 @@ struct SourceSaveButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Save", help: "Save (⌘S)", action: action) {
+        ChromePill(theme: theme, title: L("Save"), help: L("Save (⌘S)"), action: action) {
             Image(systemName: "square.and.arrow.down")
                 .font(.system(size: 11))
         }
@@ -496,9 +523,9 @@ struct SourceSideBySideButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: isSideBySide ? "Editor Only" : "Side by Side",
-                   help: isSideBySide ? "Show the editor only (⌥⇧⌘E)"
-                                      : "Show the rendered document beside the editor (⌥⇧⌘E)",
+        ChromePill(theme: theme, title: isSideBySide ? L("Editor Only") : L("Side by Side"),
+                   help: isSideBySide ? L("Show the editor only (⌥⇧⌘E)")
+                                      : L("Show the rendered document beside the editor (⌥⇧⌘E)"),
                    action: action) {
             Image(systemName: isSideBySide ? "rectangle" : "rectangle.split.2x1")
                 .font(.system(size: 11))
@@ -512,7 +539,7 @@ struct SourceDoneButton: View {
     let action: () -> Void
 
     var body: some View {
-        ChromePill(theme: theme, title: "Done", help: "Done editing (Esc)", action: action) {
+        ChromePill(theme: theme, title: L("Done"), help: L("Done editing (Esc)"), action: action) {
             Image(systemName: "checkmark")
                 .font(.system(size: 11))
         }
@@ -530,8 +557,8 @@ struct TipJarButton: View {
     var body: some View {
         ChromePill(
             theme: theme,
-            title: "Tip Jar",
-            help: "Support QuickMD",
+            title: L("Tip Jar"),
+            help: L("Support QuickMD"),
             tint: .pink,
             action: { openWindow(id: "tip-jar") }
         ) {
@@ -571,7 +598,7 @@ struct SupportButton: View {
         } label: {
             // Menu labels render once on macOS and ignore later state changes,
             // so the label is `.fixed` and hover feedback lives on the Menu.
-            ChromePillLabel(theme: theme, title: "Support") {
+            ChromePillLabel(theme: theme, title: L("Support")) {
                 Text("☕")
                     .font(.system(size: 12))
             }

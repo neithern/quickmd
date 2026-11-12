@@ -2142,20 +2142,40 @@ final class VerticalRhythmTests: XCTestCase {
 
     // MARK: - Reading column follows the zoom
 
-    /// Reading mode's column is 720 pt at 100 % and scales with the text, in
-    /// whole points; the window still caps it. 1.14.4 kept 720 at every zoom:
-    /// ~45 characters a line at 200 %.
+    /// Reading mode's preferred column is 720 pt at 100 % and scales with the
+    /// text, but the rendered document has a global 960 pt maximum.
     func testTheReadingColumnScalesWithTheZoom() {
         typealias Document = BlockLayout.Document
+        XCTAssertEqual(Document.defaultMaximumPageWidth, 960)
         XCTAssertEqual(Document.readingColumnCap(fontScale: 1), 720)
         XCTAssertEqual(Document.readingColumnCap(fontScale: 2), 1440)
         XCTAssertEqual(Document.readingColumnCap(fontScale: 0.5), 360)
         XCTAssertEqual(Document.readingColumnCap(fontScale: 3), 2160)
         XCTAssertEqual(Document.readingColumnCap(fontScale: 1.1), 792)   // 792.0000000000001
-        // 200 %: the full 1440 where the window has room, the window otherwise.
-        XCTAssertEqual(Document.columnWidth(inner: 1600 - 64, cap: Document.readingColumnCap(fontScale: 2)), 1440)
-        XCTAssertEqual(Document.columnWidth(inner: 1000 - 64, cap: Document.readingColumnCap(fontScale: 2)), 936)
-        XCTAssertEqual(Document.columnWidth(inner: 1000 - 64, cap: Document.readingColumnCap(fontScale: 1)), 720)
+        let defaultWidth = Document.defaultMaximumPageWidth
+        XCTAssertEqual(Document.renderedColumnCap(readingFontScale: nil, maximumPageWidth: defaultWidth), 960)
+        XCTAssertEqual(Document.renderedColumnCap(readingFontScale: 2, maximumPageWidth: defaultWidth), 960)
+        XCTAssertEqual(Document.renderedColumnCap(readingFontScale: 0.5, maximumPageWidth: defaultWidth), 360)
+        XCTAssertNil(Document.renderedColumnCap(readingFontScale: nil, maximumPageWidth: 0))
+        XCTAssertNil(Document.renderedColumnCap(readingFontScale: 2, maximumPageWidth: 0))
+        XCTAssertEqual(Document.normalizedMaximumPageWidth(-10), 0)
+        XCTAssertEqual(Document.normalizedMaximumPageWidth(.infinity), defaultWidth)
+        // 200 % prefers 1440, but the rendered column stops at 960.
+        XCTAssertEqual(Document.columnWidth(inner: 1600 - 64,
+                                            cap: Document.renderedColumnCap(readingFontScale: 2,
+                                                                           maximumPageWidth: defaultWidth)), 960)
+        XCTAssertEqual(Document.columnWidth(inner: 1000 - 64,
+                                            cap: Document.renderedColumnCap(readingFontScale: 2,
+                                                                           maximumPageWidth: defaultWidth)), 936)
+        XCTAssertEqual(Document.columnWidth(inner: 1000 - 64,
+                                            cap: Document.renderedColumnCap(readingFontScale: 1,
+                                                                           maximumPageWidth: defaultWidth)), 720)
+        XCTAssertEqual(Document.columnWidth(inner: 1600 - 64,
+                                            cap: Document.renderedColumnCap(readingFontScale: nil,
+                                                                           maximumPageWidth: defaultWidth)), 960)
+        XCTAssertEqual(Document.columnWidth(inner: 1600 - 64,
+                                            cap: Document.renderedColumnCap(readingFontScale: nil,
+                                                                           maximumPageWidth: 0)), 1600 - 64)
         XCTAssertEqual(Document.columnWidth(inner: 935.5, cap: nil), 935.5)
         XCTAssertEqual(Document.columnWidth(inner: -10, cap: 720), 0)
     }
@@ -2169,8 +2189,12 @@ final class VerticalRhythmTests: XCTestCase {
         let blocks = parse(String(repeating: "A line of prose that wraps in every column it is given. ", count: 12))
         for inner: CGFloat in [1600 - 64, 1000 - 64] {
             for scale: CGFloat in [0.5, 1, 1.5, 2, 3] {
-                let column = Document.columnWidth(inner: inner, cap: Document.readingColumnCap(fontScale: scale))
-                let width = Document.parseWidth(contentWidth: 720, inner: inner, readingFontScale: scale)
+                let column = Document.columnWidth(inner: inner,
+                                                  cap: Document.renderedColumnCap(
+                                                    readingFontScale: scale,
+                                                    maximumPageWidth: Document.defaultMaximumPageWidth))
+                let width = Document.parseWidth(contentWidth: 720, inner: inner,
+                                                readingFontScale: scale)
                 XCTAssertEqual(width, column, "inner \(inner) × \(scale)")
                 XCTAssertEqual(measure(blocks, fontScale: scale, width: width).table.contentWidth, column)
             }
@@ -2180,6 +2204,8 @@ final class VerticalRhythmTests: XCTestCase {
         // No layout yet, or the list not wired: nothing to derive from.
         XCTAssertEqual(Document.parseWidth(contentWidth: 0, inner: 1536, readingFontScale: 2), 0)
         XCTAssertEqual(Document.parseWidth(contentWidth: 720, inner: 0, readingFontScale: 2), 720)
+        XCTAssertEqual(Document.parseWidth(contentWidth: 720, inner: 1536, readingFontScale: 2,
+                                            maximumPageWidth: 0), 1536)
     }
 
     /// ⌘+ ⌘+ ⌘− ⌘− in reading mode with the viewport top inside the image:

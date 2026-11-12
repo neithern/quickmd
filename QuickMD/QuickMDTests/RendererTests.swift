@@ -683,8 +683,8 @@ final class RendererTests: XCTestCase {
                 return attr.runs.compactMap { $0[AttributeScopes.AppKitAttributes.FontAttribute.self]?.pointSize }
             }
         }
-        XCTAssertEqual(bodySizes(1.0), [14, 14, 14])
-        XCTAssertEqual(bodySizes(2.0), [28, 28, 28])
+        XCTAssertEqual(bodySizes(1.0), [16, 16, 16])
+        XCTAssertEqual(bodySizes(2.0), [32, 32, 32])
     }
 
     func testZoomStepsClampAtBothEnds() {
@@ -1360,7 +1360,7 @@ extension RendererTests {
     /// when the dump format changed: every run of the ordinary document —
     /// characters, fonts, colours, decorations, links, tags — must stay
     /// exactly this. One run changed on
-    /// purpose: the heading's code span `quickmd` is bold MONOSPACED at 13/14
+    /// purpose: the heading's code span `quickmd` is bold MONOSPACED at 13/16
     /// of the heading size (policy B, owner's board) — it was the bold body
     /// font at full size. The escapes' tag (`EscapedCharacterAttribute`) is
     /// gone since formulas are decided on the source (v1.15 seam review):
@@ -1369,129 +1369,129 @@ extension RendererTests {
     static let ordinaryDocumentDump = #"""
     h1
       "Release notes for QuickMD and " font=32.00 bold fg=text bg=- ui=fc-
-      "quickmd" font=29.71 bold mono fg=text bg=code ui=fcb
+      "quickmd" font=26.00 bold mono fg=text bg=code ui=fcb
     text
-      "A paragraph with " font=14.00 fg=text bg=- ui=fc-
-      "bold" font=14.00 bold fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "italic" font=14.00 italic fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "bold too" font=14.00 bold fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "italic too" font=14.00 italic fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "both" font=14.00 bold italic fg=text bg=- ui=fc-
-      " and " font=14.00 fg=text bg=- ui=fc-
-      "struck" font=14.00 fg=text bg=- s ui=fc-
-      " text. Inline " font=14.00 fg=text bg=- ui=fc-
+      "A paragraph with " font=16.00 fg=text bg=- ui=fc-
+      "bold" font=16.00 bold fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "italic" font=16.00 italic fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "bold too" font=16.00 bold fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "italic too" font=16.00 italic fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "both" font=16.00 bold italic fg=text bg=- ui=fc-
+      " and " font=16.00 fg=text bg=- ui=fc-
+      "struck" font=16.00 fg=text bg=- s ui=fc-
+      " text. Inline " font=16.00 fg=text bg=- ui=fc-
       "code" font=13.00 mono fg=text bg=code ui=fcb
-      ", " font=14.00 fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
       "double `tick` code" font=13.00 mono fg=text bg=code ui=fcb
-      ", a " font=14.00 fg=text bg=- ui=fc-
-      "link" font=14.00 fg=link bg=- u link=https://example.com ui=fc-
-      ", a " font=14.00 fg=text bg=- ui=fc-
-      "titled link" font=14.00 fg=link bg=- u link=https://example.com/a ui=fc-
-      " and a " font=14.00 fg=text bg=- ui=fc-
-      "reference link" font=14.00 fg=link bg=- u link=https://docs.example.com ui=fc-
-      " plus " font=14.00 fg=text bg=- ui=fc-
-      "docs" font=14.00 fg=link bg=- u link=https://docs.example.com ui=fc-
-      " as a shortcut. Snake_case_names and 2" font=14.00 fg=text bg=- ui=fc-
-      "3" font=14.00 italic fg=text bg=- ui=fc-
-      "4 stay plain. Escapes: *not italic*, _not_, [not a link], 50% and AT&T © 2026. A bare " font=14.00 fg=text bg=- ui=fc-
-      "https://example.com/page" font=14.00 fg=link bg=- u link=https://example.com/page ui=fc-
-      " link, an image " font=14.00 fg=text bg=- ui=fc-
-      "[Image: logo]" font=14.00 italic fg=secondary bg=- link=logo.png ui=fc-
-      " and a footnote" font=14.00 fg=text bg=- ui=fc-
+      ", a " font=16.00 fg=text bg=- ui=fc-
+      "link" font=16.00 fg=link bg=- u link=https://example.com ui=fc-
+      ", a " font=16.00 fg=text bg=- ui=fc-
+      "titled link" font=16.00 fg=link bg=- u link=https://example.com/a ui=fc-
+      " and a " font=16.00 fg=text bg=- ui=fc-
+      "reference link" font=16.00 fg=link bg=- u link=https://docs.example.com ui=fc-
+      " plus " font=16.00 fg=text bg=- ui=fc-
+      "docs" font=16.00 fg=link bg=- u link=https://docs.example.com ui=fc-
+      " as a shortcut. Snake_case_names and 2" font=16.00 fg=text bg=- ui=fc-
+      "3" font=16.00 italic fg=text bg=- ui=fc-
+      "4 stay plain. Escapes: *not italic*, _not_, [not a link], 50% and AT&T © 2026. A bare " font=16.00 fg=text bg=- ui=fc-
+      "https://example.com/page" font=16.00 fg=link bg=- u link=https://example.com/page ui=fc-
+      " link, an image " font=16.00 fg=text bg=- ui=fc-
+      "[Image: logo]" font=16.00 italic fg=secondary bg=- link=logo.png ui=fc-
+      " and a footnote" font=16.00 fg=text bg=- ui=fc-
       "¹" font=11.00 bold fg=link bg=- fn=1 ui=fc-
-      "." font=14.00 fg=text bg=- ui=fc-
+      "." font=16.00 fg=text bg=- ui=fc-
     h2
       "Lists" font=26.00 bold fg=text bg=- ui=fc-
     text
-      "• First item with " font=14.00 fg=text bg=- ui=fc-
-      "bold" font=14.00 bold fg=text bg=- ui=fc-
-      " and a " font=14.00 fg=text bg=- ui=fc-
-      "link" font=14.00 fg=link bg=- u link=https://x.example/b ui=fc-
+      "• First item with " font=16.00 fg=text bg=- ui=fc-
+      "bold" font=16.00 bold fg=text bg=- ui=fc-
+      " and a " font=16.00 fg=text bg=- ui=fc-
+      "link" font=16.00 fg=link bg=- u link=https://x.example/b ui=fc-
       "
     " font=- fg=- bg=- ui=---
-      "• Second item with " font=14.00 fg=text bg=- ui=fc-
+      "• Second item with " font=16.00 fg=text bg=- ui=fc-
       "code" font=13.00 mono fg=text bg=code ui=fcb
-      " and " font=14.00 fg=text bg=- ui=fc-
-      "emphasis" font=14.00 italic fg=text bg=- ui=fc-
+      " and " font=16.00 fg=text bg=- ui=fc-
+      "emphasis" font=16.00 italic fg=text bg=- ui=fc-
       "
     " font=- fg=- bg=- ui=---
-      "    • Nested item with " font=14.00 fg=text bg=- ui=fc-
-      "old" font=14.00 fg=text bg=- s ui=fc-
-      " text" font=14.00 fg=text bg=- ui=fc-
+      "    • Nested item with " font=16.00 fg=text bg=- ui=fc-
+      "old" font=16.00 fg=text bg=- s ui=fc-
+      " text" font=16.00 fg=text bg=- ui=fc-
       "
     " font=- fg=- bg=- ui=---
-      "1. Ordered " font=14.00 fg=text bg=- ui=fc-
-      "one" font=14.00 bold fg=text bg=- ui=fc-
+      "1. Ordered " font=16.00 fg=text bg=- ui=fc-
+      "one" font=16.00 bold fg=text bg=- ui=fc-
       "
     " font=- fg=- bg=- ui=---
-      "2. Ordered " font=14.00 fg=text bg=- ui=fc-
-      "two" font=14.00 italic fg=text bg=- ui=fc-
+      "2. Ordered " font=16.00 fg=text bg=- ui=fc-
+      "two" font=16.00 italic fg=text bg=- ui=fc-
       "
     " font=- fg=- bg=- ui=---
-      "☐ Task with " font=14.00 fg=text bg=- ui=fc-
+      "☐ Task with " font=16.00 fg=text bg=- ui=fc-
       "code" font=13.00 mono fg=text bg=code ui=fcb
       "
     " font=- fg=- bg=- ui=---
-      "☑ " font=14.00 fg=checkbox bg=- ui=fc-
-      "Done task with " font=14.00 fg=secondary bg=- s ui=fc-
-      "link" font=14.00 fg=secondary bg=- u s link=https://x.example/c ui=fc-
+      "☑ " font=16.00 fg=checkbox bg=- ui=fc-
+      "Done task with " font=16.00 fg=secondary bg=- s ui=fc-
+      "link" font=16.00 fg=secondary bg=- u s link=https://x.example/c ui=fc-
     quote
-      "A quote with " font=14.00 fg=text bg=- ui=fc-
-      "bold" font=14.00 bold fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "italic" font=14.00 italic fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
+      "A quote with " font=16.00 fg=text bg=- ui=fc-
+      "bold" font=16.00 bold fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "italic" font=16.00 italic fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
       "code" font=13.00 mono fg=text bg=code ui=fcb
-      " and a " font=14.00 fg=text bg=- ui=fc-
-      "reference" font=14.00 fg=link bg=- u link=https://docs.example.com ui=fc-
-      ". Second line of the quote." font=14.00 fg=text bg=- ui=fc-
+      " and a " font=16.00 fg=text bg=- ui=fc-
+      "reference" font=16.00 fg=link bg=- u link=https://docs.example.com ui=fc-
+      ". Second line of the quote." font=16.00 fg=text bg=- ui=fc-
     alert
-      "An alert with " font=14.00 fg=text bg=- ui=fc-
-      "bold" font=14.00 bold fg=text bg=- ui=fc-
-      " and a " font=14.00 fg=text bg=- ui=fc-
-      "link" font=14.00 fg=link bg=- u link=https://x.example/d ui=fc-
-      "." font=14.00 fg=text bg=- ui=fc-
+      "An alert with " font=16.00 fg=text bg=- ui=fc-
+      "bold" font=16.00 bold fg=text bg=- ui=fc-
+      " and a " font=16.00 fg=text bg=- ui=fc-
+      "link" font=16.00 fg=link bg=- u link=https://x.example/d ui=fc-
+      "." font=16.00 fg=text bg=- ui=fc-
     cell
-      "Column " font=14.00 fg=text bg=- ui=fc-
-      "A" font=14.00 bold fg=text bg=- ui=fc-
+      "Column " font=16.00 fg=text bg=- ui=fc-
+      "A" font=16.00 bold fg=text bg=- ui=fc-
     cell
-      "Column " font=14.00 fg=text bg=- ui=fc-
+      "Column " font=16.00 fg=text bg=- ui=fc-
       "B" font=13.00 mono fg=text bg=code ui=fcb
     cell
-      "Link" font=14.00 fg=text bg=- ui=fc-
+      "Link" font=16.00 fg=text bg=- ui=fc-
     cell
-      "one" font=14.00 italic fg=text bg=- ui=fc-
+      "one" font=16.00 italic fg=text bg=- ui=fc-
     cell
       "two" font=13.00 mono fg=text bg=code ui=fcb
     cell
-      "three" font=14.00 fg=link bg=- u link=https://x.example/e ui=fc-
+      "three" font=16.00 fg=link bg=- u link=https://x.example/e ui=fc-
     cell
-      "four" font=14.00 fg=text bg=- s ui=fc-
+      "four" font=16.00 fg=text bg=- s ui=fc-
     cell
-      "five_six" font=14.00 fg=text bg=- ui=fc-
+      "five_six" font=16.00 fg=text bg=- ui=fc-
     cell
-      "https://x.example/f" font=14.00 fg=link bg=- u link=https://x.example/f ui=fc-
+      "https://x.example/f" font=16.00 fg=link bg=- u link=https://x.example/f ui=fc-
     text
-      "Term" font=14.00 bold fg=text bg=- ui=fc-
+      "Term" font=16.00 bold fg=text bg=- ui=fc-
       "
     " font=- fg=- bg=- ui=---
-      "    Definition with " font=14.00 fg=text bg=- ui=fc-
-      "bold" font=14.00 bold fg=text bg=- ui=fc-
-      " and " font=14.00 fg=text bg=- ui=fc-
+      "    Definition with " font=16.00 fg=text bg=- ui=fc-
+      "bold" font=16.00 bold fg=text bg=- ui=fc-
+      " and " font=16.00 fg=text bg=- ui=fc-
       "code" font=13.00 mono fg=text bg=code ui=fcb
-      "." font=14.00 fg=text bg=- ui=fc-
+      "." font=16.00 fg=text bg=- ui=fc-
     text
-      "Last paragraph: " font=14.00 fg=text bg=- ui=fc-
-      "bold with spaces inside" font=14.00 bold fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "a phrase in italics" font=14.00 italic fg=text bg=- ui=fc-
-      ", and " font=14.00 fg=text bg=- ui=fc-
+      "Last paragraph: " font=16.00 fg=text bg=- ui=fc-
+      "bold with spaces inside" font=16.00 bold fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "a phrase in italics" font=16.00 italic fg=text bg=- ui=fc-
+      ", and " font=16.00 fg=text bg=- ui=fc-
       "x * y" font=13.00 mono fg=text bg=code ui=fcb
-      " code." font=14.00 fg=text bg=- ui=fc-
+      " code." font=16.00 fg=text bg=- ui=fc-
     text
       "────────────────────────────────
     " font=12.00 fg=secondary bg=- ui=fc-
@@ -1499,7 +1499,7 @@ extension RendererTests {
       "The footnote with emphasis." font=12.00 fg=secondary bg=- ui=fc-
     """#
 
-    func testOrdinaryDocumentRendersExactlyAsBefore() {
+    func testOrdinaryDocumentRendersWithPinnedStyles() {
         XCTAssertEqual(Self.runDump(Self.ordinaryDocument), Self.ordinaryDocumentDump)
     }
 }
@@ -1538,84 +1538,84 @@ extension RendererTests {
     /// the board (policy B, CJK-friendly flanking, 2026-11-11).
     static let decidedDocumentDump = #"""
     text
-      "Nested: " font=14.00 fg=text bg=- ui=fc-
-      "a " font=14.00 bold fg=text bg=- ui=fc-
-      "b" font=14.00 bold italic fg=text bg=- ui=fc-
-      " c" font=14.00 bold fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "x" font=14.00 bold italic fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "a " font=14.00 italic fg=text bg=- ui=fc-
-      "b" font=14.00 bold italic fg=text bg=- ui=fc-
-      " c" font=14.00 italic fg=text bg=- ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "s" font=14.00 bold fg=text bg=- s ui=fc-
-      " and " font=14.00 fg=text bg=- ui=fc-
-      "one" font=14.00 fg=text bg=- s ui=fc-
-      " and " font=14.00 fg=text bg=- ui=fc-
-      "two" font=14.00 fg=text bg=- s ui=fc-
-      ". CJK: " font=14.00 fg=text bg=- ui=fc-
-      "「テスト」" font=14.00 bold fg=text bg=- ui=fc-
-      "と、" font=14.00 fg=text bg=- ui=fc-
-      "テスト。" font=14.00 bold fg=text bg=- ui=fc-
-      "次、これは" font=14.00 fg=text bg=- ui=fc-
-      "強調" font=14.00 bold fg=text bg=- ui=fc-
-      "です、" font=14.00 fg=text bg=- ui=fc-
-      "加粗（括号）" font=14.00 bold fg=text bg=- ui=fc-
-      "文字、" font=14.00 fg=text bg=- ui=fc-
-      "굵게" font=14.00 bold fg=text bg=- ui=fc-
-      "는. Links: see " font=14.00 fg=text bg=- ui=fc-
-      "www.example.org" font=14.00 fg=link bg=- u link=http://www.example.org ui=fc-
-      ", mail " font=14.00 fg=text bg=- ui=fc-
-      "a.b@c.example" font=14.00 fg=link bg=- u link=mailto:a.b@c.example ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "https://x.example/?a=1&b=2" font=14.00 fg=link bg=- u link=https://x.example/?a=1&b=2 ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "https://x.example/p_(q)" font=14.00 fg=link bg=- u link=https://x.example/p_(q) ui=fc-
-      ". Code: " font=14.00 fg=text bg=- ui=fc-
-      "run " font=14.00 bold fg=text bg=- ui=fc-
+      "Nested: " font=16.00 fg=text bg=- ui=fc-
+      "a " font=16.00 bold fg=text bg=- ui=fc-
+      "b" font=16.00 bold italic fg=text bg=- ui=fc-
+      " c" font=16.00 bold fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "x" font=16.00 bold italic fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "a " font=16.00 italic fg=text bg=- ui=fc-
+      "b" font=16.00 bold italic fg=text bg=- ui=fc-
+      " c" font=16.00 italic fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "s" font=16.00 bold fg=text bg=- s ui=fc-
+      " and " font=16.00 fg=text bg=- ui=fc-
+      "one" font=16.00 fg=text bg=- s ui=fc-
+      " and " font=16.00 fg=text bg=- ui=fc-
+      "two" font=16.00 fg=text bg=- s ui=fc-
+      ". CJK: " font=16.00 fg=text bg=- ui=fc-
+      "「テスト」" font=16.00 bold fg=text bg=- ui=fc-
+      "と、" font=16.00 fg=text bg=- ui=fc-
+      "テスト。" font=16.00 bold fg=text bg=- ui=fc-
+      "次、これは" font=16.00 fg=text bg=- ui=fc-
+      "強調" font=16.00 bold fg=text bg=- ui=fc-
+      "です、" font=16.00 fg=text bg=- ui=fc-
+      "加粗（括号）" font=16.00 bold fg=text bg=- ui=fc-
+      "文字、" font=16.00 fg=text bg=- ui=fc-
+      "굵게" font=16.00 bold fg=text bg=- ui=fc-
+      "는. Links: see " font=16.00 fg=text bg=- ui=fc-
+      "www.example.org" font=16.00 fg=link bg=- u link=http://www.example.org ui=fc-
+      ", mail " font=16.00 fg=text bg=- ui=fc-
+      "a.b@c.example" font=16.00 fg=link bg=- u link=mailto:a.b@c.example ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "https://x.example/?a=1&b=2" font=16.00 fg=link bg=- u link=https://x.example/?a=1&b=2 ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "https://x.example/p_(q)" font=16.00 fg=link bg=- u link=https://x.example/p_(q) ui=fc-
+      ". Code: " font=16.00 fg=text bg=- ui=fc-
+      "run " font=16.00 bold fg=text bg=- ui=fc-
       "make" font=13.00 bold mono fg=text bg=code ui=fcb
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "run " font=14.00 italic fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "run " font=16.00 italic fg=text bg=- ui=fc-
       "make" font=13.00 italic mono fg=text bg=code ui=fcb
-      ", a footnote " font=14.00 fg=text bg=- ui=fc-
-      "a" font=14.00 bold fg=text bg=- ui=fc-
+      ", a footnote " font=16.00 fg=text bg=- ui=fc-
+      "a" font=16.00 bold fg=text bg=- ui=fc-
       "¹" font=11.00 bold fg=link bg=- fn=1 ui=fc-
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "see " font=14.00 bold fg=text bg=- ui=fc-
-      "docs" font=14.00 bold fg=link bg=- u link=https://x.example ui=fc-
-      "." font=14.00 fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "see " font=16.00 bold fg=text bg=- ui=fc-
+      "docs" font=16.00 bold fg=link bg=- u link=https://x.example ui=fc-
+      "." font=16.00 fg=text bg=- ui=fc-
     h2
       "Heading with " font=26.00 bold fg=text bg=- ui=fc-
-      "code" font=24.14 bold mono fg=text bg=code ui=fcb
+      "code" font=21.12 bold mono fg=text bg=code ui=fcb
       ", " font=26.00 bold fg=text bg=- ui=fc-
       "it" font=26.00 bold italic fg=text bg=- ui=fc-
       " and " font=26.00 bold fg=text bg=- ui=fc-
       "link" font=26.00 bold fg=link bg=- u link=https://x.example ui=fc-
     cell
-      "A | B" font=14.00 fg=text bg=- ui=fc-
+      "A | B" font=16.00 fg=text bg=- ui=fc-
     cell
       "c | d" font=13.00 mono fg=text bg=code ui=fcb
     cell
-      "l" font=14.00 bold fg=link bg=- u link=https://x.example ui=fc-
+      "l" font=16.00 bold fg=link bg=- u link=https://x.example ui=fc-
     cell
-      "x | y" font=14.00 fg=text bg=- ui=fc-
+      "x | y" font=16.00 fg=text bg=- ui=fc-
     cell
-      "i" font=14.00 italic fg=text bg=- ui=fc-
-      " " font=14.00 fg=text bg=- ui=fc-
+      "i" font=16.00 italic fg=text bg=- ui=fc-
+      " " font=16.00 fg=text bg=- ui=fc-
       "c" font=13.00 mono fg=text bg=code ui=fcb
     cell
-      "s" font=14.00 fg=text bg=- s ui=fc-
-      " " font=14.00 fg=text bg=- ui=fc-
-      "www.x.example" font=14.00 fg=link bg=- u link=http://www.x.example ui=fc-
+      "s" font=16.00 fg=text bg=- s ui=fc-
+      " " font=16.00 fg=text bg=- ui=fc-
+      "www.x.example" font=16.00 fg=link bg=- u link=http://www.x.example ui=fc-
     quote
-      "Quote with " font=14.00 fg=text bg=- ui=fc-
+      "Quote with " font=16.00 fg=text bg=- ui=fc-
       "code" font=13.00 bold mono fg=text bg=code ui=fcb
-      ", " font=14.00 fg=text bg=- ui=fc-
-      "a@b.example" font=14.00 fg=link bg=- u link=mailto:a@b.example ui=fc-
-      " and " font=14.00 fg=text bg=- ui=fc-
-      "ref" font=14.00 fg=link bg=- u link=https://docs.example.com ui=fc-
-      "." font=14.00 fg=text bg=- ui=fc-
+      ", " font=16.00 fg=text bg=- ui=fc-
+      "a@b.example" font=16.00 fg=link bg=- u link=mailto:a@b.example ui=fc-
+      " and " font=16.00 fg=text bg=- ui=fc-
+      "ref" font=16.00 fg=link bg=- u link=https://docs.example.com ui=fc-
+      "." font=16.00 fg=text bg=- ui=fc-
     text
       "────────────────────────────────
     " font=12.00 fg=secondary bg=- ui=fc-

@@ -27,15 +27,14 @@ struct SettingsView: View {
 
 // MARK: - General
 
-/// Settings → General: behaviour that is not about how the document looks —
-/// the opt-in auto-copy of selections (v1.11 S-D10), separate document
-/// windows instead of tabs (#57) and the Contents sidebar's depth (#42, also in
-/// the sidebar's context menu); same grouped Form and window size as the other
-/// tabs, so switching tabs does not resize the window.
+/// Settings → General: document layout, selection behavior, window behavior,
+/// and the Contents sidebar's depth.
 struct GeneralSettingsView: View {
     @AppStorage(SelectionAutoCopy.defaultsKey) private var autoCopySelection: Bool = false
     @AppStorage(ToCDepth.defaultsKey) private var tocMaxLevel: Int = ToCDepth.all
     @AppStorage(WindowTabbing.separateWindowsKey) private var separateWindows: Bool = false
+    @AppStorage(BlockLayout.Document.maximumPageWidthDefaultsKey)
+    private var maximumPageWidth = BlockLayout.Document.defaultMaximumPageWidth
 
     /// Writes the setting and applies it to the documents opened from now on
     /// (`WindowTabbing.applyWindowPreference` lists what a running app can and
@@ -95,9 +94,41 @@ struct GeneralSettingsView: View {
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
+
+                Section {
+                    HStack(spacing: 12) {
+                        Text("Maximum page width")
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                        Spacer(minLength: 12)
+                        HStack(spacing: 6) {
+                            TextField("", value: maximumPageWidthSelection,
+                                      format: .number.precision(.fractionLength(0)))
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 80)
+                                .accessibilityLabel(Text("Maximum page width"))
+                            Text("pt")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } header: {
+                    Text("Page")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.secondary)
+                } footer: {
+                    Text("Maximum page width 0 means no width limit.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
             }
             .formStyle(.grouped)
         }
         .frame(width: 360, height: 420)
+    }
+
+    private var maximumPageWidthSelection: Binding<Double> {
+        Binding(get: { BlockLayout.Document.normalizedMaximumPageWidth(maximumPageWidth) },
+                set: { maximumPageWidth = BlockLayout.Document.normalizedMaximumPageWidth($0) })
     }
 }

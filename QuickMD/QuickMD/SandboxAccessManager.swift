@@ -146,8 +146,8 @@ final class SandboxAccessManager {
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = false
         panel.directoryURL = directoryURL
-        panel.prompt = "Grant Access"
-        panel.message = "QuickMD needs access to this folder to display local images and open linked files. This is a one-time prompt per folder."
+        panel.prompt = L("Grant Access")
+        panel.message = L("QuickMD needs access to this folder to display local images and open linked files. This is a one-time prompt per folder.")
         guard panel.runModal() == .OK, let selectedURL = panel.url else { return nil }
         return selectedURL
     }

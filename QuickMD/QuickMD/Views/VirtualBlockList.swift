@@ -90,20 +90,24 @@ struct VirtualBlockList: NSViewRepresentable {
     /// `updateNSView` and the anchor is captured and restored exactly once for the
     /// whole switch.
     struct LayoutStyle: Equatable {
-        /// Upper bound on the width a block view is laid out at. `nil` = fill the
-        /// window, which is every mode but reading mode.
+        /// Upper bound on the width a block view is laid out at. `nil` = fill
+        /// the window; standard and reading styles both provide a cap.
         let maxContentWidth: CGFloat?
         /// Visible gap above the first block and below the last one.
         let verticalPadding: CGFloat
 
-        static let standard = LayoutStyle(maxContentWidth: nil,
-                                          verticalPadding: Metrics.contentVerticalPadding)
-        /// Reading mode at `fontScale`: the column cap follows the zoom
-        /// (`BlockLayout.Document.readingColumnCap`), so a zoom in reading mode
-        /// is a style change too — together with the parse that installs the
-        /// zoomed blocks (`MarkdownView` derives it from `renderedFontScale`).
-        static func reading(fontScale: CGFloat) -> LayoutStyle {
-            LayoutStyle(maxContentWidth: BlockLayout.Document.readingColumnCap(fontScale: fontScale),
+        static func standard(maximumPageWidth: Double) -> LayoutStyle {
+            LayoutStyle(maxContentWidth: Metrics.renderedColumnCap(readingFontScale: nil,
+                                                                   maximumPageWidth: maximumPageWidth),
+                        verticalPadding: Metrics.contentVerticalPadding)
+        }
+        /// Reading mode at `fontScale`: the preferred column cap follows the
+        /// zoom, up to the global render cap, so a zoom in reading mode is a
+        /// style change too — together with the parse that installs the zoomed
+        /// blocks (`MarkdownView` derives it from `renderedFontScale`).
+        static func reading(fontScale: CGFloat, maximumPageWidth: Double) -> LayoutStyle {
+            LayoutStyle(maxContentWidth: BlockLayout.Document.renderedColumnCap(
+                readingFontScale: fontScale, maximumPageWidth: maximumPageWidth),
                         verticalPadding: Metrics.readingContentVerticalPadding)
         }
 
@@ -425,7 +429,7 @@ struct VirtualBlockList: NSViewRepresentable {
         /// `makeCoordinator` and changed only through `applyLayoutStyle`, which is
         /// what keeps the cells' layout width, the published `contentWidth` and
         /// the scroll insets in agreement.
-        var layoutStyle: LayoutStyle = .standard
+        var layoutStyle: LayoutStyle = .standard(maximumPageWidth: Metrics.defaultMaximumPageWidth)
 
         // MARK: AppKit
 
@@ -1391,7 +1395,7 @@ struct VirtualBlockList: NSViewRepresentable {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .fixedSize(horizontal: false, vertical: true)
 
-            // The reading-mode column cap, expressed as a frame so that the LAYOUT
+            // The document column cap, expressed as a frame so that the LAYOUT
             // SYSTEM computes `min(clipWidth − 2 · padding, cap)` — the exact
             // expression `currentContentWidth()` publishes and the heights are
             // measured with. Baking the number into a padding instead would freeze
@@ -1399,7 +1403,7 @@ struct VirtualBlockList: NSViewRepresentable {
             // width moves without a rebuild all through a live resize: the cells
             // would then wrap at a width the row heights were never measured for
             // (and NSTableView does not clip its rows). The outer frame centres
-            // the capped column; with no cap both frames take the full proposal
+            // the capped column; without a cap both frames take the full proposal
             // and change nothing, which is exactly the 1.8.0 geometry.
             //
             // The cap the CELLS use is never narrower than the width the installed
@@ -1440,8 +1444,8 @@ struct VirtualBlockList: NSViewRepresentable {
             )
         }
 
-        /// The widest the block column may lay out in a cell — see the reading-
-        /// mode comment in `rootView(for:)`. Also the width of an atomic row's
+        /// The widest the block column may lay out in a cell — see the column
+        /// cap comment in `rootView(for:)`. Also the width of an atomic row's
         /// selection tint, so the tint covers the column and not the margins.
         private var cellColumnCap: CGFloat {
             let styleCap = layoutStyle.maxContentWidth ?? .infinity
@@ -1862,8 +1866,8 @@ final class BlockHostingCell: NSTableCellView {
         }
     }
 
-    /// The widest the block column gets (reading mode caps it; `.infinity`
-    /// otherwise) — the tint covers the column, not the side margins.
+    /// The widest the block column gets — the tint covers the column, not the
+    /// side margins.
     var selectionTintColumnCap: CGFloat = .infinity {
         didSet { if selectionTintColumnCap != oldValue { needsLayout = true } }
     }
@@ -2314,10 +2318,10 @@ final class SelectionController: NSObject {
         }
         // Explicit target: validation then asks the table (Copy is enabled iff
         // the selection is non-empty), whatever else is first responder.
-        let copy = NSMenuItem(title: "Copy", action: #selector(BlockTableView.copy(_:)), keyEquivalent: "")
+        let copy = NSMenuItem(title: L("Copy"), action: #selector(BlockTableView.copy(_:)), keyEquivalent: "")
         copy.target = tableView
         menu.addItem(copy)
-        let all = NSMenuItem(title: "Select All", action: #selector(BlockTableView.selectAll(_:)), keyEquivalent: "")
+        let all = NSMenuItem(title: L("Select All"), action: #selector(BlockTableView.selectAll(_:)), keyEquivalent: "")
         all.target = tableView
         menu.addItem(all)
         return menu
@@ -2345,7 +2349,7 @@ final class SelectionController: NSObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, text.count <= 64,
               !text.unicodeScalars.contains(where: { $0 == "\u{FFFC}" }) else { return nil }
-        let item = NSMenuItem(title: "Look Up \u{201C}\(text)\u{201D}",
+        let item = NSMenuItem(title: L("Look Up “%@”", text),
                               action: #selector(lookUp(_:)), keyEquivalent: "")
         item.target = self
         item.representedObject = LookUpRequest(textView: textView, range: word)

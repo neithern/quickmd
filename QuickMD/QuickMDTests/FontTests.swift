@@ -190,7 +190,7 @@ final class FontTests: XCTestCase {
         let system = try? XCTUnwrap(headIndent(MarkdownTheme.cached(for: .light)))
         let serif = try? XCTUnwrap(headIndent(customTheme))
         let expectedSerif = 16 + ("• " as NSString)
-            .size(withAttributes: [.font: DocumentFonts(body: Self.body).appKit(size: 14)]).width
+            .size(withAttributes: [.font: DocumentFonts(body: Self.body).appKit(size: 16)]).width
         XCTAssertEqual(serif ?? -1, expectedSerif, accuracy: 0.01)
         XCTAssertNotEqual(system ?? -1, serif ?? -1, "hang should track the marker's real width")
     }

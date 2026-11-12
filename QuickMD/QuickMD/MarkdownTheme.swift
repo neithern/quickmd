@@ -28,6 +28,10 @@ struct MarkdownTheme: Sendable, Identifiable {
 
     var id: String { name }
 
+    /// Picker label. Built-in names are product names and stay as-is; only
+    /// "Auto" is translated. Custom theme names are the user's own.
+    var displayName: String { name == ThemeName.auto ? L("Auto") : name }
+
     // MARK: - Text Colors
 
     let textColor: Color

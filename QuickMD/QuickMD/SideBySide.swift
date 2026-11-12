@@ -33,7 +33,8 @@ struct SourceEditMenuState: Equatable {
     /// ⌥⇧⌘E's title: "Editor Only" only while editing side by side; from
     /// reading or the editor alone it turns side by side on.
     static func sideBySideTitle(for state: SourceEditMenuState?) -> String {
-        state?.isEditing == true && state?.isSideBySide == true ? "Editor Only" : "Edit Side by Side"
+        state?.isEditing == true && state?.isSideBySide == true
+            ? L("Editor Only") : L("Edit Side by Side")
     }
 }
 

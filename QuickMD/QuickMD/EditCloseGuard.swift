@@ -383,20 +383,20 @@ enum UnsavedChangesAlert {
     static func makeAlert(fileName: String, allowsCancel: Bool) -> NSAlert {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "Do you want to save the changes you made to “\(fileName)”?"
-        alert.informativeText = "Your changes will be lost if you don’t save them."
+        alert.messageText = L("Do you want to save the changes you made to “%@”?", fileName)
+        alert.informativeText = L("Your changes will be lost if you don’t save them.")
 
-        let save = alert.addButton(withTitle: "Save")
+        let save = alert.addButton(withTitle: L("Save"))
         save.keyEquivalent = "\r"
         save.setAccessibilityIdentifier(saveIdentifier)
 
-        let discard = alert.addButton(withTitle: "Don’t Save")
+        let discard = alert.addButton(withTitle: L("Don’t Save"))
         discard.keyEquivalent = "d"
         discard.keyEquivalentModifierMask = [.command]
         discard.setAccessibilityIdentifier(discardIdentifier)
 
         if allowsCancel {
-            let cancel = alert.addButton(withTitle: "Cancel")
+            let cancel = alert.addButton(withTitle: L("Cancel"))
             cancel.keyEquivalent = "\u{1b}"
             cancel.setAccessibilityIdentifier(cancelIdentifier)
         }

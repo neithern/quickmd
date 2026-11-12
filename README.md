@@ -80,6 +80,9 @@ Perfect for developers, writers, students, and anyone who works with Markdown da
 - Settings panel (`⌘,`) with color and font previews
 - Dark mode follows the system, or pick a fixed theme; theme and fonts persist across restarts
 
+### Languages
+- English and Simplified Chinese UI, following the macOS per-app language setting. Adding a language needs only a new `Localizable.strings` — see [docs/localization.md](docs/localization.md).
+
 ### Privacy Focused
 - No analytics, no tracking
 - Works completely offline (except for remote images and the optional Check for Updates)
@@ -155,7 +158,7 @@ Get [QuickMD on the Mac App Store](https://apps.apple.com/app/quickmd/id67576818
 
 ### Build from Source
 
-Requires macOS 13.0 (Ventura) or later and Xcode 15+. See [Development](#development).
+Requires macOS 26 or later and Xcode 26+. See [Development](#development).
 
 ## Usage
 
@@ -194,7 +197,7 @@ Now all your Markdown files will open instantly with QuickMD!
 
 ## Under the Hood
 
-- Swift 5.9, SwiftUI + AppKit, macOS 13.0+, Apple Silicon and Intel. Zero package dependencies: math rendering is vendored ([SwiftMath](https://github.com/mgriebling/SwiftMath)), [Mermaid.js](https://mermaid.js.org/) is bundled and runs offline
+- Swift 5.9, SwiftUI + AppKit, macOS 26+, Apple Silicon and Intel. Zero package dependencies: math rendering is vendored ([SwiftMath](https://github.com/mgriebling/SwiftMath)), [Mermaid.js](https://mermaid.js.org/) is bundled and runs offline
 - Its own Markdown parser (block-level, with a YAML frontmatter and reference-link pre-pass) and a single inline scanner shared by parser and renderer
 - Text is drawn by native `NSTextView`s hosted in a virtualized `NSTableView`; row heights are measured exactly, off the main thread, so scrolling and jumps stay exact on documents of any size
 - A per-document file watcher (`DispatchSource`) drives auto-reload, including editors that save atomically
@@ -219,6 +222,7 @@ QuickMD/
 ├── AppIcon/                    # App icon sources (SVG)
 ├── QuickMDTests/               # Unit tests
 ├── docs/themes/                # Custom theme schema + starter themes
+├── docs/localization.md        # i18n scheme, key rules, adding a language
 └── CHANGELOG.md                # Version history
 ```
 

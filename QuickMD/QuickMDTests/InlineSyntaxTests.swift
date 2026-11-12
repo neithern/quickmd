@@ -175,7 +175,7 @@ final class InlineSyntaxTests: XCTestCase {
         XCTAssertTrue(traits("x").isSuperset(of: [.bold, .italic, .monoSpace]), "\(traits("x"))")
         XCTAssertNotNil(run("make")?.font, "SwiftUI scope too")
         // Text around them is the ordinary bold body font.
-        XCTAssertEqual(font("run "), theme.fonts.appKit(size: 14 * 1.5, weight: .bold))
+        XCTAssertEqual(font("run "), theme.fonts.appKit(size: 16 * 1.5, weight: .bold))
     }
 
     // MARK: - Strikethrough (GFM)
@@ -429,12 +429,12 @@ final class InlineSyntaxTests: XCTestCase {
             func font(_ text: String) -> NSFont? { run(text)?[AttributeScopes.AppKitAttributes.FontAttribute.self] }
             let code = font("code")?.fontDescriptor.symbolicTraits ?? []
             XCTAssertTrue(code.isSuperset(of: [.bold, .monoSpace]), "\(code)")
-            XCTAssertEqual(font("code")?.pointSize ?? 0, size * 13 / 14, accuracy: 0.001)
+            XCTAssertEqual(font("code")?.pointSize ?? 0, size * 13 / 16, accuracy: 0.001)
             XCTAssertNotNil(run("code")?[AttributeScopes.AppKitAttributes.BackgroundColorAttribute.self])
             XCTAssertTrue(font("it")?.fontDescriptor.symbolicTraits.isSuperset(of: [.bold, .italic]) ?? false)
             XCTAssertEqual(run("l")?[AttributeScopes.AppKitAttributes.ForegroundColorAttribute.self],
                            NSColor(theme.linkColor))
-            XCTAssertEqual(font("\u{00B9}")?.pointSize ?? 0, size * 11 / 14, accuracy: 0.001)
+            XCTAssertEqual(font("\u{00B9}")?.pointSize ?? 0, size * 11 / 16, accuracy: 0.001)
             XCTAssertEqual(font("Title "), renderer.headerAppKitFont(level: level))
             XCTAssertNotNil(run("code")?.font, "SwiftUI scope too")
         }

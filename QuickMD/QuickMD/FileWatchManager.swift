@@ -179,10 +179,10 @@ final class FileWatcher {
         case missing, unreadable
 
         func bannerText(path: String?) -> String {
-            let location = path ?? "this location"
+            let location = path ?? L("this location")
             switch self {
-            case .missing: return "File no longer exists at \(location)"
-            case .unreadable: return "File can\u{2019}t be read at \(location)"
+            case .missing: return L("File no longer exists at %@", location)
+            case .unreadable: return L("File can’t be read at %@", location)
             }
         }
     }

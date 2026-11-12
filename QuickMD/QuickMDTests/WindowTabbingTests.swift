@@ -118,6 +118,59 @@ final class WindowTabbingTests: XCTestCase {
             forName: Bundle.main.bundleIdentifier ?? "")?[WindowTabbing.preferenceKey])
     }
 
+    func testDocumentNavigationTracksBackAndForwardAvailability() {
+        let navigation = DocumentTabNavigation()
+        let first = FakeWindow()
+        let second = FakeWindow()
+
+        navigation.record(first)
+        XCTAssertFalse(navigation.canGoBack)
+        XCTAssertFalse(navigation.canGoForward)
+
+        navigation.record(second)
+        XCTAssertTrue(navigation.canGoBack)
+        XCTAssertFalse(navigation.canGoForward)
+
+        navigation.goBack()
+        XCTAssertTrue(navigation.currentWindow === first)
+        XCTAssertFalse(navigation.canGoBack)
+        XCTAssertTrue(navigation.canGoForward)
+
+        navigation.goForward()
+        XCTAssertTrue(navigation.currentWindow === second)
+        XCTAssertTrue(navigation.canGoBack)
+        XCTAssertFalse(navigation.canGoForward)
+    }
+
+    func testDocumentNavigationTruncatesForwardHistoryAfterNewSelection() {
+        let navigation = DocumentTabNavigation()
+        let first = FakeWindow()
+        let second = FakeWindow()
+        let third = FakeWindow()
+
+        navigation.record(first)
+        navigation.record(second)
+        navigation.goBack()
+        navigation.record(third)
+
+        XCTAssertTrue(navigation.currentWindow === third)
+        XCTAssertTrue(navigation.canGoBack)
+        XCTAssertFalse(navigation.canGoForward)
+    }
+
+    func testDocumentNavigationRemovesClosedWindowsFromHistory() {
+        let navigation = DocumentTabNavigation()
+        let first = FakeWindow()
+        let second = FakeWindow()
+
+        navigation.record(first)
+        navigation.record(second)
+        navigation.remove(first)
+
+        XCTAssertFalse(navigation.canGoBack)
+        XCTAssertFalse(navigation.canGoForward)
+    }
+
     // MARK: - joinExistingTabs
 
     func testAlreadyTabbedByAppKitCountsAsMerged() {

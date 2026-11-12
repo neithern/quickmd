@@ -248,7 +248,7 @@ final class FootnoteTests: XCTestCase {
             ("P[^a]\n\n[^a]: note\n# Heading\n", ["t:P\u{00B9}", "h1:Heading"]),
             ("P[^a]\n\n[^a]: note\n```\nfence\n```\n", ["t:P\u{00B9}", "c:fence"]),
             ("P[^a]\n\n[^a]: note\n> quote\n", ["t:P\u{00B9}", "q:quote"]),
-            ("P[^a]\n\n[^a]: note\n<div>html</div>\n", ["t:P\u{00B9}", "t:<div>html</div>"]),
+            ("P[^a]\n\n[^a]: note\n<div>html</div>\n", ["t:P\u{00B9}", "t:html"]),
         ]
         for (md, expected) in cases {
             let blocks = parse(md)

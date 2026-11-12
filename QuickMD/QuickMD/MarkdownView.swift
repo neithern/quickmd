@@ -91,6 +91,8 @@ struct MarkdownView: View {
     /// families are baked into the AttributedStrings at parse time.
     @AppStorage(DocumentFonts.bodyDefaultsKey) private var bodyFontFamily: String = ""
     @AppStorage(DocumentFonts.codeDefaultsKey) private var codeFontFamily: String = ""
+    @AppStorage(BlockLayout.Document.maximumPageWidthDefaultsKey)
+    private var maximumPageWidth = BlockLayout.Document.defaultMaximumPageWidth
     /// Settings ▸ Fonts ▸ Default zoom (#48), raw as stored; read it through
     /// `defaultZoom`, which normalizes whatever `defaults write` left there.
     @AppStorage(DefaultZoom.defaultsKey) private var defaultZoomSetting: Double = 1.0
@@ -117,8 +119,8 @@ struct MarkdownView: View {
     @State private var appliedDefaultZoom: Double
     /// ⌘⇧R — distraction-free reading: both sidebars, the top-right chrome pills
     /// and the Support/Tip Jar button step out of the way, and the text column
-    /// stops at `Metrics.readingColumnCap(fontScale:)` (720 pt at 100 %, scaled
-    /// with the zoom) and centres itself.
+    /// stops at the zoom-scaled reading width, up to the 960 pt document cap,
+    /// and centres itself.
     ///
     /// @State, not @AppStorage, for the same reason as `fontScale`: it belongs to
     /// this window and this reading session. A viewer that reopens with its
@@ -324,7 +326,9 @@ struct MarkdownView: View {
                         focusedBlockId: focusedBlockId,
                         focusedOccInBlock: focusedOccInBlock,
                         scrollRequest: scrollRequest,
-                        layoutStyle: isReadingMode ? .reading(fontScale: CGFloat(renderedFontScale)) : .standard,
+                        layoutStyle: isReadingMode
+                            ? .reading(fontScale: CGFloat(renderedFontScale), maximumPageWidth: maximumPageWidth)
+                            : .standard(maximumPageWidth: maximumPageWidth),
                         contentWidth: $contentWidth,
                         onHeightReport: { blockId, row, height in
                             applyHeightReport(blockId: blockId, row: row, height: height)
@@ -462,23 +466,6 @@ struct MarkdownView: View {
                 }
                 .padding(.top, topChromeInset)
             }
-            .overlay(alignment: .bottomTrailing) {
-                // The Support / Tip Jar button is hidden while editing as well
-                // as in Reading Mode: it would float over the text being
-                // edited (bottom-right is where a long line ends), and a
-                // misclick there opens a menu or a window mid-edit.
-                if !isReadingMode && !editSession.isActive {
-                    Group {
-                        #if APPSTORE
-                        TipJarButton(theme: theme)
-                        #else
-                        SupportButton(theme: theme)
-                        #endif
-                    }
-                    .padding(16)
-                    .transition(.opacity)
-                }
-            }
             .overlay(alignment: .center) {
                 // Editing: the editor is what is on screen and it is not
                 // waiting for anything — the list under the editor alone is
@@ -514,7 +501,7 @@ struct MarkdownView: View {
             // Two different waits, and on a big document they are long enough
             // to tell apart: the parser turning text into blocks, then the
             // measurer turning blocks into row heights.
-            Text(isParsing ? "Parsing…" : "Rendering…")
+            Text(isParsing ? L("Parsing…") : L("Rendering…"))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
         }
@@ -564,6 +551,7 @@ struct MarkdownView: View {
                     }
                     .transition(.opacity)
                 }
+                DocumentTabNavigationButtons(theme: theme)
                 if documentURL != nil {
                     ReloadDocumentButton(theme: theme) {
                         reloadManually()
@@ -628,8 +616,7 @@ struct MarkdownView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .background(.regularMaterial)
-        .clipShape(Capsule())
+        .glassEffect(.regular, in: Capsule())
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
@@ -833,7 +820,8 @@ struct MarkdownView: View {
             let listWidth = contentWidth
             let width = BlockLayout.Document.parseWidth(
                 contentWidth: listWidth, inner: documentColumn.innerWidth?() ?? 0,
-                readingFontScale: isReadingMode && Double(scale) != renderedFontScale ? scale : nil)
+                readingFontScale: isReadingMode && Double(scale) != renderedFontScale ? scale : nil,
+                maximumPageWidth: maximumPageWidth)
             // Keyed by the link, so valid across this re-parse.
             let imageSizes = heightCache.imageSizesSnapshot
             let out: ParsedAndMeasured = await Task.detached(priority: .userInitiated) {
@@ -1177,9 +1165,9 @@ struct MarkdownView: View {
         startWatching(url)
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         switch reloadFromDisk() {
-        case .changed: showToast("Reloaded")
-        case .unchanged: showToast("Reloaded \u{00B7} no changes")
-        case .unreadable: showToast("Couldn't read the file")
+        case .changed: showToast(L("Reloaded"))
+        case .unchanged: showToast(L("Reloaded \u{00B7} no changes"))
+        case .unreadable: showToast(L("Couldn't read the file"))
         case .ownedBySession: break
         }
     }
@@ -1496,6 +1484,12 @@ struct MarkdownView: View {
                                    onLink: { handleLinkActivation($0) })
                     .padding(.vertical, Metrics.tableOuterVerticalPadding)
 
+            case .htmlTable(let rows):
+                HTMLTableBlockView(rows: rows, theme: theme, documentURL: documentURL,
+                                   fontScale: scale, contentWidth: contentWidth, heightCache: heightCache,
+                                   onEnlarge: presentGraphicPreview)
+                    .padding(.vertical, Metrics.tableOuterVerticalPadding)
+
             case .codeBlock(let code, let language):
                 // The copy button's toast belongs to THIS tab: a closure, not a
                 // notification every open document would observe.
@@ -1672,7 +1666,7 @@ struct MarkdownView: View {
                                                    renderer: renderer, math: .swiftMath)
         case .table:
             return selectableTable(for: block, installedVersion: installedVersion)?.string
-        case .image, .imageRow, .svgImage, .mathBlock, .mermaidDiagram:
+        case .htmlTable, .image, .imageRow, .svgImage, .mathBlock, .mermaidDiagram:
             return nil
         }
     }
@@ -1705,7 +1699,7 @@ struct MarkdownView: View {
     private func applyZoom(_ zoom: MarkdownZoom) {
         let next = zoom.applied(to: fontScale, defaultScale: defaultZoom)
         fontScale = next
-        showToast("Zoom \(Int((next * 100).rounded()))%")
+        showToast(L("Zoom %lld%%", Int((next * 100).rounded())))
     }
 
     // MARK: - Reading Mode
@@ -1733,7 +1727,7 @@ struct MarkdownView: View {
         isReadingMode = on
         // While editing the first Esc leaves the editor, not Reading Mode —
         // the hint would be wrong there.
-        if on { showToast(editSession.isActive ? "Reading Mode" : "Reading Mode (Esc to exit)") }
+        if on { showToast(editSession.isActive ? L("Reading Mode") : L("Reading Mode (Esc to exit)")) }
     }
 
     private func showToast(_ message: String) {
@@ -1898,9 +1892,9 @@ struct MarkdownView: View {
             // handing control to another application.
             // Middle-truncated: a document can carry a multi-megabyte URL
             // (a `data:` link, #32) and an alert does not scroll.
-            if confirmOpening(title: "Open \u{201C}\(scheme):\u{201D} link?",
-                              message: "This link opens another application:\n"
-                                + DisplayString.middleTruncated(url.absoluteString, maxLength: 200),
+            if confirmOpening(title: L("Open “%@:” link?", scheme),
+                              message: L("This link opens another application:\n%@",
+                                         DisplayString.middleTruncated(url.absoluteString, maxLength: 200)),
                               cancelIsDefault: false) {
                 NSWorkspace.shared.open(url)
             }

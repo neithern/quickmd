@@ -170,11 +170,32 @@ enum WindowTabbing {
     /// not by `tabbingIdentifier`: SwiftUI chooses that value, and the Settings
     /// or Tip Jar window must never become a document's host.
     private static let registeredDocumentWindows = NSHashTable<NSWindow>.weakObjects()
+    private static var navigationObserversInstalled = false
 
     static var documentWindows: [NSWindow] { registeredDocumentWindows.allObjects }
 
     static func registerDocumentWindow(_ window: NSWindow) {
         registeredDocumentWindows.add(window)
+        installNavigationObservers()
+        if window.isKeyWindow {
+            DocumentTabNavigation.shared.record(window)
+        }
+    }
+
+    private static func installNavigationObservers() {
+        guard !navigationObserversInstalled else { return }
+        navigationObserversInstalled = true
+        let center = NotificationCenter.default
+        center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { note in
+            guard let window = note.object as? NSWindow,
+                  documentWindows.contains(where: { $0 === window }) else { return }
+            DocumentTabNavigation.shared.record(window)
+        }
+        center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { note in
+            guard let window = note.object as? NSWindow,
+                  documentWindows.contains(where: { $0 === window }) else { return }
+            DocumentTabNavigation.shared.remove(window)
+        }
     }
 
     /// Called once the new window is on screen. Returns true when it ended up
@@ -207,6 +228,85 @@ enum WindowTabbing {
         host.addTabbedWindow(newWindow, ordered: .above)
         newWindow.makeKeyAndOrderFront(nil)
         return true
+    }
+}
+
+// MARK: - Document Tab Navigation
+
+private final class WeakDocumentWindow {
+    weak var value: NSWindow?
+
+    init(_ value: NSWindow) {
+        self.value = value
+    }
+}
+
+final class DocumentTabNavigation: ObservableObject {
+    static let shared = DocumentTabNavigation()
+
+    @Published private(set) var canGoBack = false
+    @Published private(set) var canGoForward = false
+
+    private var history: [WeakDocumentWindow] = []
+    private var index = -1
+
+    var currentWindow: NSWindow? {
+        guard history.indices.contains(index) else { return nil }
+        return history[index].value
+    }
+
+    func record(_ window: NSWindow) {
+        pruneReleasedWindows()
+        guard currentWindow !== window else { return }
+        if index + 1 < history.count {
+            history.removeSubrange((index + 1)..<history.count)
+        }
+        history.append(WeakDocumentWindow(window))
+        index = history.count - 1
+        updateAvailability()
+    }
+
+    func remove(_ window: NSWindow) {
+        let current = currentWindow
+        history.removeAll { $0.value == nil || $0.value === window }
+        if let current, let currentIndex = history.firstIndex(where: { $0.value === current }) {
+            index = currentIndex
+        } else {
+            index = min(index, history.count - 1)
+        }
+        updateAvailability()
+    }
+
+    func goBack() {
+        navigate(to: index - 1)
+    }
+
+    func goForward() {
+        navigate(to: index + 1)
+    }
+
+    private func navigate(to destination: Int) {
+        pruneReleasedWindows()
+        guard history.indices.contains(destination), let window = history[destination].value else { return }
+        index = destination
+        updateAvailability()
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    private func pruneReleasedWindows() {
+        let current = currentWindow
+        history.removeAll { $0.value == nil }
+        if let current, let currentIndex = history.firstIndex(where: { $0.value === current }) {
+            index = currentIndex
+        } else {
+            index = min(index, history.count - 1)
+        }
+        updateAvailability()
+    }
+
+    private func updateAvailability() {
+        canGoBack = history.indices.contains(index - 1) && history[index - 1].value != nil
+        canGoForward = history.indices.contains(index + 1) && history[index + 1].value != nil
     }
 }
 
