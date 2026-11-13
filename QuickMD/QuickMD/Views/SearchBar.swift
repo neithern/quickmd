@@ -38,13 +38,15 @@ struct SearchBar: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
+            .background(Color(nsColor: .controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.3), lineWidth: 1))
 
             // Navigation buttons
             if !searchText.isEmpty && matchCount > 0 {
                 Button(action: onPrevious) {
                     Image(systemName: "chevron.up")
                         .font(.system(size: 11, weight: .medium))
-                        .padding(5)
                 }
                 .buttonStyle(.plain)
                 .help("Previous match")
@@ -52,7 +54,6 @@ struct SearchBar: View {
                 Button(action: onNext) {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 11, weight: .medium))
-                        .padding(5)
                 }
                 .buttonStyle(.plain)
                 .help("Next match")
@@ -66,14 +67,13 @@ struct SearchBar: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.secondary)
-                    .padding(5)
             }
             .buttonStyle(.plain)
             .help("Close search (Esc)")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
-        .glassEffect(.regular, in: Capsule())
+        .background(.ultraThinMaterial)
         .onAppear {
             // Delay focus to allow SwiftUI to finish layout
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
